@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32526.322
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rendering_3D_objects", "Rendering_3D_objects\Rendering_3D_objects.csproj", "{123519A8-C978-42AA-A7F6-0363FAB3BB3A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{123519A8-C978-42AA-A7F6-0363FAB3BB3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{123519A8-C978-42AA-A7F6-0363FAB3BB3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{123519A8-C978-42AA-A7F6-0363FAB3BB3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{123519A8-C978-42AA-A7F6-0363FAB3BB3A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D175872A-657B-4C85-89D4-90A3937E5DFF}
+	EndGlobalSection
+EndGlobal
