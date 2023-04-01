@@ -100,6 +100,7 @@
     <Compile Include="open_tk_control\open_tk_buffer\VertexBufferLayout.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Text_to_mesh\txt_to_mesh.cs" />
     <EmbeddedResource Include="main_form.resx">
       <DependentUpon>main_form.cs</DependentUpon>
     </EmbeddedResource>
@@ -132,6 +133,15 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Examples\cube_r.txt" />
+    <Content Include="Examples\cylinder_r.txt" />
+    <Content Include="Examples\donut_r.txt" />
+    <Content Include="Examples\klein_bottle_r.txt" />
+    <Content Include="Examples\scube_combn.txt" />
+    <Content Include="Examples\scube_tri.txt" />
+    <Content Include="Examples\sphere_1.txt" />
+    <Content Include="Examples\sphere_beam.txt" />
+    <Content Include="Examples\ssphere_2.txt" />
     <Content Include="freetype6.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

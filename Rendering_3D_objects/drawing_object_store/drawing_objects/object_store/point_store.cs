@@ -5,6 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
 
+// OpenTK 
+using OpenTK;
+
 namespace Rendering_3D_objects.drawing_object_store.drawing_objects.object_store
 {
     public class point_store
@@ -20,8 +23,6 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects.object_store
         private double pt_paint_x;
         private double pt_paint_y;
         private double pt_paint_z;
-
-        public int pt_id { get; private set; }
 
         public double d_x { get; private set; }
 
@@ -85,10 +86,17 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects.object_store
             return get_vertex_coords().Concat(get_highlight_vertex_color()).ToArray(); ;
         }
 
-        public point_store(int t_pt_id, double t_x, double t_y, double t_z, Color clr)
+        public Vector3 get_point_as_vector()
+        {
+            // return points as OpenTK.Struct.Vector3
+            return new Vector3((float)this.d_x,
+                               (float)this.d_y,
+                               (float)this.d_z);
+        }
+
+        public point_store(double t_x, double t_y, double t_z, Color clr)
         {
             // Main constructor
-            this.pt_id = t_pt_id;
             this.d_x = t_x;
             this.d_y = t_y;
             this.d_z = t_z;
@@ -109,24 +117,11 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects.object_store
 
         public bool Equals(point_store other_pt)
         {
-            // Check 1 (Point ids should not match)
-            if (this.Equals(other_pt.pt_id) == true)
-            {
-                return true;
-            }
-
-            // Check 2 (Whether point co-ordinates match)
             if (this.Equals(other_pt._x, other_pt._y, other_pt._z) == true)
             {
                 return true;
             }
             return false;
-        }
-
-        private bool Equals(int other_pt_id)
-        {
-            // Check whether the ids are matching
-            return (this.pt_id == other_pt_id);
         }
 
         public bool Equals(int other_pt_x, int other_pt_y, int other_pt_z)
@@ -141,7 +136,7 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects.object_store
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(this.pt_id, this._x, this._y, this._z);
+            return HashCode.Combine(this._x, this._y, this._z);
         }
     }
 }

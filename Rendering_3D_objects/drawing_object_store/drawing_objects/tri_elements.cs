@@ -18,7 +18,7 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
     public class tri_elements
     {
         // class to store all the triangles
-        public List<triangle_store> all_tri { get; private set; }
+        public Dictionary<int,triangle_store> all_tri { get; private set; }
         
         // Dictionary to keep track of user ID and internal ID (User ID = KEY, Internal ID = 0,1,2,..,n sequential)
         public Dictionary<int, int> tri_ids { get; private set; }
@@ -35,7 +35,7 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
         {
             // Empty constructor
             // Initialize all points
-            all_tri = new List<triangle_store>();
+            all_tri = new Dictionary<int, triangle_store>();
             tri_ids = new Dictionary<int, int>();
 
         }
@@ -55,29 +55,29 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
             // Create a line ID as sequence (0,1,2...n)
             int seq_id = tri_ids.Count == 0 ? 0 : (tri_ids.Values.LastOrDefault() + 1);
 
-            // Create a temporary point
-            triangle_store temp_tri = new triangle_store(tri_id, pt_id_0, pt_id_1, pt_id_2);
+            // Create a temporary triangle
+            triangle_store temp_tri = new triangle_store(pt_id_0, pt_id_1, pt_id_2);
 
             // Check whether the point already exists
-            if (all_tri.Contains(temp_tri) == false)
+            if (all_tri.Values.Contains(temp_tri) == false)
             {
                 // Add the Line IDs to the list as Key (also flipped)
                 tri_ids.Add(tri_id, seq_id);
 
-                // Add new line
-                all_tri.Add(temp_tri);
+                // Add new triangle
+                all_tri.Add(tri_id, temp_tri);
             }
 
         }
 
-        public void set_openTK_objects(nodes_store all_nodes)
+        public void set_openTK_objects(nodes_store nodes)
         {
 
             // Set the quadrialateral indices
             int j = 0;
             this._tri_indices = new uint[all_tri.Count * 3];
 
-            foreach (triangle_store tris in all_tri)
+            foreach (var tris in all_tri)
             {
                 /*
                 1
@@ -89,20 +89,20 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
                 */
                 // 0, 1, 2
                 // First index (First point)
-                this._tri_indices[j] = (uint)all_nodes.node_ids[tris.pt0_id];
+                this._tri_indices[j] = (uint)nodes.node_ids[tris.Value.pt0_id];
                 j++;
 
                 // Second index (Second point)
-                this._tri_indices[j] = (uint)all_nodes.node_ids[tris.pt1_id];
+                this._tri_indices[j] = (uint)nodes.node_ids[tris.Value.pt1_id];
                 j++;
 
                 // Third index (Third point)
-                this._tri_indices[j] = (uint)all_nodes.node_ids[tris.pt2_id];
+                this._tri_indices[j] = (uint)nodes.node_ids[tris.Value.pt2_id];
                 j++;
             }
 
             //1.  Get the vertex buffer
-            this.tripts_VertexBufferObject = all_nodes.point_VertexBufferObject;
+            this.tripts_VertexBufferObject = nodes.point_VertexBufferObject;
 
             //2. Create and add to the buffer layout
             tri_BufferLayout = new List<VertexBufferLayout>();

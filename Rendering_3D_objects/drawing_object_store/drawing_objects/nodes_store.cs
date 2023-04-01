@@ -18,7 +18,7 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
     public class nodes_store
     {
         // class to store all the nodes
-        public HashSet<point_store> all_nodes { get; private set; }
+        public Dictionary<int,point_store> all_nodes { get; private set; }
 
         // Dictionary to keep track of user ID and internal ID (User ID = KEY, Internal ID = 0,1,2,..,n sequential)
         public Dictionary<int, int> node_ids { get; private set; }
@@ -37,7 +37,7 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
         {
             // Empty constructor
             // Initialize all points
-            all_nodes = new HashSet<point_store>();
+            all_nodes = new Dictionary<int,point_store>();
             node_ids = new Dictionary<int, int>();
         }
 
@@ -47,16 +47,16 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
                 int seq_id = node_ids.Count == 0 ? 0 : (node_ids.Values.LastOrDefault() + 1);
 
                 // Create a temporary point
-                point_store temp_pt = new point_store(pt_id, t_x, t_y, t_z, clr);
+                point_store temp_pt = new point_store(t_x, t_y, t_z, clr);
 
                 // Check whether the point already exists
-                if (all_nodes.Contains(temp_pt) == false)
+                if (all_nodes.Values.Contains(temp_pt) == false)
                 {
                     // Add the node IDs to the list as Key 
                     node_ids.Add(pt_id, seq_id);
 
                     // Add new point
-                    all_nodes.Add(temp_pt);
+                    all_nodes.Add(pt_id,temp_pt);
                 }
 
         }
@@ -68,12 +68,12 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
             this._point_vertices = new float[7 * all_nodes.Count];
             this._point_indices = new uint[all_nodes.Count];
 
-            foreach (point_store pts in all_nodes)
+            foreach (var pts in all_nodes)
             {
                 // add the point vertices
-                float[] temp_vertices = pts.get_point_vertices();
+                float[] temp_vertices = pts.Value.get_point_vertices();
 
-                int i = node_ids[pts.pt_id]; // Get the sequential ID to form the buffers
+                int i = node_ids[pts.Key]; // Get the sequential ID to form the buffers
                 // X, Y, Z Co-ordinate
                 this._point_vertices[(i * 7) + 0] = temp_vertices[0];
                 this._point_vertices[(i * 7) + 1] = temp_vertices[1];

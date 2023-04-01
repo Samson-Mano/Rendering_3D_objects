@@ -31,6 +31,7 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(main_form));
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabel_Zoom = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStripStatusLabel_rotation = new System.Windows.Forms.ToolStripStatusLabel();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.importToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -38,8 +39,6 @@
             this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.axisToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.originToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.glControl_main_panel = new OpenTK.GLControl();
-            this.toolStripStatusLabel_rotation = new System.Windows.Forms.ToolStripStatusLabel();
             this.viewAxisToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.frontToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.backToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -50,6 +49,7 @@
             this.isometric1ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.isometric2ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.savedViewsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.glControl_main_panel = new OpenTK.GLControl();
             this.statusStrip1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -71,6 +71,12 @@
             this.toolStripStatusLabel_Zoom.Name = "toolStripStatusLabel_Zoom";
             this.toolStripStatusLabel_Zoom.Size = new System.Drawing.Size(118, 17);
             this.toolStripStatusLabel_Zoom.Text = "toolStripStatusLabel1";
+            // 
+            // toolStripStatusLabel_rotation
+            // 
+            this.toolStripStatusLabel_rotation.Name = "toolStripStatusLabel_rotation";
+            this.toolStripStatusLabel_rotation.Size = new System.Drawing.Size(118, 17);
+            this.toolStripStatusLabel_rotation.Text = "toolStripStatusLabel1";
             // 
             // menuStrip1
             // 
@@ -95,14 +101,16 @@
             // importToolStripMenuItem
             // 
             this.importToolStripMenuItem.Name = "importToolStripMenuItem";
-            this.importToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+            this.importToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.importToolStripMenuItem.Text = "Import";
+            this.importToolStripMenuItem.Click += new System.EventHandler(this.importToolStripMenuItem_Click);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.exitToolStripMenuItem.Text = "Exit";
+            this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
             // viewToolStripMenuItem
             // 
@@ -117,30 +125,14 @@
             // axisToolStripMenuItem
             // 
             this.axisToolStripMenuItem.Name = "axisToolStripMenuItem";
-            this.axisToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.axisToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.axisToolStripMenuItem.Text = "Axis";
             // 
             // originToolStripMenuItem
             // 
             this.originToolStripMenuItem.Name = "originToolStripMenuItem";
-            this.originToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.originToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.originToolStripMenuItem.Text = "Origin";
-            // 
-            // glControl_main_panel
-            // 
-            this.glControl_main_panel.BackColor = System.Drawing.Color.Black;
-            this.glControl_main_panel.Location = new System.Drawing.Point(60, 92);
-            this.glControl_main_panel.Margin = new System.Windows.Forms.Padding(4, 19, 4, 19);
-            this.glControl_main_panel.Name = "glControl_main_panel";
-            this.glControl_main_panel.Size = new System.Drawing.Size(363, 263);
-            this.glControl_main_panel.TabIndex = 2;
-            this.glControl_main_panel.VSync = false;
-            // 
-            // toolStripStatusLabel_rotation
-            // 
-            this.toolStripStatusLabel_rotation.Name = "toolStripStatusLabel_rotation";
-            this.toolStripStatusLabel_rotation.Size = new System.Drawing.Size(118, 17);
-            this.toolStripStatusLabel_rotation.Text = "toolStripStatusLabel1";
             // 
             // viewAxisToolStripMenuItem
             // 
@@ -155,62 +147,72 @@
             this.isometric2ToolStripMenuItem,
             this.savedViewsToolStripMenuItem});
             this.viewAxisToolStripMenuItem.Name = "viewAxisToolStripMenuItem";
-            this.viewAxisToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.viewAxisToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.viewAxisToolStripMenuItem.Text = "View Axis";
             // 
             // frontToolStripMenuItem
             // 
             this.frontToolStripMenuItem.Name = "frontToolStripMenuItem";
-            this.frontToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.frontToolStripMenuItem.Size = new System.Drawing.Size(138, 22);
             this.frontToolStripMenuItem.Text = "Front";
             // 
             // backToolStripMenuItem
             // 
             this.backToolStripMenuItem.Name = "backToolStripMenuItem";
-            this.backToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.backToolStripMenuItem.Size = new System.Drawing.Size(138, 22);
             this.backToolStripMenuItem.Text = "Back";
             // 
             // leftToolStripMenuItem
             // 
             this.leftToolStripMenuItem.Name = "leftToolStripMenuItem";
-            this.leftToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.leftToolStripMenuItem.Size = new System.Drawing.Size(138, 22);
             this.leftToolStripMenuItem.Text = "Left";
             // 
             // rightToolStripMenuItem
             // 
             this.rightToolStripMenuItem.Name = "rightToolStripMenuItem";
-            this.rightToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.rightToolStripMenuItem.Size = new System.Drawing.Size(138, 22);
             this.rightToolStripMenuItem.Text = "Right";
             // 
             // topToolStripMenuItem
             // 
             this.topToolStripMenuItem.Name = "topToolStripMenuItem";
-            this.topToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.topToolStripMenuItem.Size = new System.Drawing.Size(138, 22);
             this.topToolStripMenuItem.Text = "Top";
             // 
             // bottomToolStripMenuItem
             // 
             this.bottomToolStripMenuItem.Name = "bottomToolStripMenuItem";
-            this.bottomToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.bottomToolStripMenuItem.Size = new System.Drawing.Size(138, 22);
             this.bottomToolStripMenuItem.Text = "Bottom";
             // 
             // isometric1ToolStripMenuItem
             // 
             this.isometric1ToolStripMenuItem.Name = "isometric1ToolStripMenuItem";
-            this.isometric1ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.isometric1ToolStripMenuItem.Size = new System.Drawing.Size(138, 22);
             this.isometric1ToolStripMenuItem.Text = "Isometric 1";
             // 
             // isometric2ToolStripMenuItem
             // 
             this.isometric2ToolStripMenuItem.Name = "isometric2ToolStripMenuItem";
-            this.isometric2ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.isometric2ToolStripMenuItem.Size = new System.Drawing.Size(138, 22);
             this.isometric2ToolStripMenuItem.Text = "Isometric 2";
             // 
             // savedViewsToolStripMenuItem
             // 
             this.savedViewsToolStripMenuItem.Name = "savedViewsToolStripMenuItem";
-            this.savedViewsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.savedViewsToolStripMenuItem.Size = new System.Drawing.Size(138, 22);
             this.savedViewsToolStripMenuItem.Text = "Saved Views";
+            // 
+            // glControl_main_panel
+            // 
+            this.glControl_main_panel.BackColor = System.Drawing.Color.Black;
+            this.glControl_main_panel.Location = new System.Drawing.Point(60, 92);
+            this.glControl_main_panel.Margin = new System.Windows.Forms.Padding(4, 19, 4, 19);
+            this.glControl_main_panel.Name = "glControl_main_panel";
+            this.glControl_main_panel.Size = new System.Drawing.Size(363, 263);
+            this.glControl_main_panel.TabIndex = 2;
+            this.glControl_main_panel.VSync = false;
             // 
             // main_form
             // 

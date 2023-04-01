@@ -18,7 +18,7 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
     public class line_elements
     {
         // class to store all the lines
-        public HashSet<line_store> all_lines { get; private set; }
+        public Dictionary<int, line_store> all_lines { get; private set; }
 
         // Dictionary to keep track of user ID and internal ID (User ID = KEY, Internal ID = 0,1,2,..,n sequential)
         public Dictionary<int, int> line_ids { get; private set; }
@@ -35,7 +35,7 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
         {
             // Empty constructor
             // Initialize all lines
-            all_lines = new HashSet<line_store>();
+            all_lines = new Dictionary<int, line_store>();
             line_ids = new Dictionary<int, int>();
         }
 
@@ -44,40 +44,40 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
             // Create a line ID as sequence (0,1,2...n)
             int seq_id = line_ids.Count == 0 ? 0 : (line_ids.Values.LastOrDefault() + 1);
 
-            // Create a temporary point
-            line_store temp_ln = new line_store(ln_id, s_id, e_id);
+            // Create a temporary line
+            line_store temp_ln = new line_store(s_id, e_id);
 
             // Check whether the point already exists
-            if (all_lines.Contains(temp_ln) == false)
+            if (all_lines.Values.Contains(temp_ln) == false)
             {
                 // Add the Line IDs to the list as Key (also flipped)
                 line_ids.Add(ln_id, seq_id);
 
                 // Add new line
-                all_lines.Add(temp_ln);
+                all_lines.Add(ln_id, temp_ln);
             }
         }
 
-        public void set_highlight_openTK_objects(nodes_store all_nodes)
+        public void set_highlight_openTK_objects(nodes_store nodes)
         {
 
             // Set the line indices
             int j = 0;
             this._line_indices = new uint[all_lines.Count * 2];
 
-            foreach (line_store ln in all_lines)
+            foreach (var ln in all_lines)
             {
                 // First index (First point)
-                this._line_indices[j] = (uint)all_nodes.node_ids[ln.start_pt_id];
+                this._line_indices[j] = (uint)nodes.node_ids[ln.Value.start_pt_id];
                 j++;
 
                 // Second index (Second point)
-                this._line_indices[j] = (uint)all_nodes.node_ids[ln.end_pt_id];
+                this._line_indices[j] = (uint)nodes.node_ids[ln.Value.end_pt_id];
                 j++;
             }
 
             //1.  Get the vertex buffer
-            this.linepts_VertexBufferObject = all_nodes.point_VertexBufferObject;
+            this.linepts_VertexBufferObject = nodes.point_VertexBufferObject;
 
             //2. Create and add to the buffer layout
             line_BufferLayout = new List<VertexBufferLayout>();
