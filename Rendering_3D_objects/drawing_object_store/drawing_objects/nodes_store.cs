@@ -10,7 +10,7 @@ using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Input;
 // This app class structure
-using Rendering_3D_objects.opentk_control.opentk_buffer;
+using Rendering_3D_objects.open_tk_control.open_tk_buffer;
 using Rendering_3D_objects.drawing_object_store.drawing_objects.object_store;
 
 namespace Rendering_3D_objects.drawing_object_store.drawing_objects
@@ -59,6 +59,15 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
                     all_nodes.Add(pt_id,temp_pt);
                 }
 
+        }
+
+        public void update_points(double d_scale, double trans_tx, double trans_ty, double trans_tz)
+        {
+            // update the scale of pointd
+            foreach (var pts in all_nodes)
+            {
+                this.all_nodes[pts.Key].update_scale(d_scale, trans_tx, trans_ty,trans_tz);
+            }
         }
 
         public void set_openTK_objects()

@@ -9,7 +9,7 @@ using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Input;
 
-namespace Rendering_3D_objects.opentk_control.opentk_buffer
+namespace Rendering_3D_objects.open_tk_control.open_tk_buffer
 {
    public class VertexArray
     {

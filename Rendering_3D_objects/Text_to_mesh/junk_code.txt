@@ -1,0 +1,2581 @@
+﻿
+ private readonly object matrixLock = new object();
+        private ArcBall arcball_control = new ArcBall(100, 100);
+
+        Matrix4 Last_transformation = new Matrix4();
+        Matrix4 This_transformation = new Matrix4();
+
+        public Matrix4 rotation_matrix
+        {
+            get { return This_transformation; }
+        }
+
+        public Quaternion rotation_matrix_quaternion
+        {
+            get { return Quaternion.FromMatrix(new Matrix3(This_transformation)); }
+        }
+
+        public arcball_transformation()
+        {
+            // set initial rotation
+            for (int i = 0; i < 4; i++)
+            {
+                this.This_transformation[i, i] = 1.0F;
+            }
+
+            // Isometric 1 as default
+            this.This_transformation[0, 0] = 0.67969810962677f;
+            this.This_transformation[0, 1] = 0.718355774879456f;
+            this.This_transformation[0, 2] = -0.148240596055985f;
+
+            this.This_transformation[1, 0] = 0.199809849262238f;
+            this.This_transformation[1, 1] = -0.375794619321823f;
+            this.This_transformation[1, 2] = -0.904905796051025f;
+
+            this.This_transformation[2, 0] = -0.705752372741699f;
+            this.This_transformation[2, 1] = 0.585442781448364f;
+            this.This_transformation[2, 2] = -0.398961365222931f;
+
+            //// Initialize the quaternion with the rotation matrix
+            //this._m_quat = new Quaternion4f(_rotationM);
+        }
+
+        public void startRotationDrag(PointF MousePt)
+        {
+            /* SyncLock is used to protect data from being updated by more than one thread simultaneously. 
+             * If the statements that manipulate the data must go to completion without interruption,
+             * put them inside a SyncLock block.
+             */
+            lock (matrixLock)
+            {
+                // Last Transformation = This Transformation
+                Last_transformation = This_transformation;
+            }
+            arcball_control.mouse_down(MousePt);
+        }
+
+        public void Rotationdrag(PointF MousePt)
+        {
+            // Update End Vector And Get Rotation As Quaternion
+            Quaternion ThisQuat = arcball_control.mouse_drag(MousePt);
+
+            lock (matrixLock)
+            {
+                // Perform Rotation (convert quaternion to rotation matrix)
+                This_transformation = Matrix4.CreateFromQuaternion(ThisQuat);
+                // Amend it to previous rotation
+                This_transformation = Matrix4.Mult(This_transformation, Last_transformation);
+            }
+        }
+
+        public void set_predetermined_rotation(Quaternion ThisQuat)
+        {
+            // Set the pre-determined rotation matrix
+            This_transformation = Matrix4.CreateFromQuaternion(ThisQuat);
+        }
+
+        public void update_arcball(double MPWidth, double MPHeight)
+        {
+            arcball_control = new ArcBall(MPWidth, MPHeight);
+        }
+
+        public class ArcBall
+        {
+            Vector3 StVec = new Vector3(0, 0, 0); // Saved Click Vector
+            Vector3 EnVec = new Vector3(0, 0, 0); // Saved Drag Vector
+            double adjusted_width, adjusted_height;
+            private double canvas_width, canvas_height;
+
+            public Vector3 start_vector { get { return StVec; } }
+
+            public Vector3 end_vector { get { return EnVec; } }
+
+            public ArcBall(double new_width, double new_height)
+            {
+                StVec = new Vector3(0, 0, 0);
+                EnVec = new Vector3(0, 0, 0);
+                // set_bounds(new_width, new_height);
+
+                // Set adjustment factor for width/height
+                adjusted_width = 1.0f / ((new_width - 1.0f) * 0.5f);
+                adjusted_height = 1.0f / ((new_height - 1.0f) * 0.5f);
+
+                adjusted_width = 10.0f; /// ((new_width - 1.0f) * 0.5f);
+                adjusted_height = 10.0f; /// ((new_height - 1.0f) * 0.5f);
+
+                canvas_width = new_width;
+                canvas_height = new_height;
+            }
+
+            public Vector3 map_to_sphere(PointF tempPt)
+            {
+                double tx, ty;
+                Vector3 vector;
+
+                // Adjust point coords and scale down to range of [-1 ... 1]
+                tx = 1.0f - (tempPt.X * this.adjusted_width);
+                ty = 1.0f - (tempPt.Y * this.adjusted_height);
+
+                tx = tempPt.X; //1.0f - (tempPt.X * this.adjusted_width);
+                ty = tempPt.Y; //1.0f - (tempPt.Y * this.adjusted_height);
+
+                // Compute square of the length of the vector from this point to the center
+                double quadrance = ((tx * tx) + (ty * ty));
+
+                if (quadrance > 1.0f)
+                {
+                    // the point is mapped outside the sphere... (length > radius squared)
+                    // Compute a normalizing factor (radius / length)
+                    double norm = 1.0f / Math.Sqrt(quadrance);
+                    vector = new Vector3((float)(tx * norm), (float)(ty * norm), 0.0f);
+                }
+                else
+                {
+                    // the point is mapped inside the sphere... (length <= radius squared)
+                    // return a vector to a point mapped inside the sphere sqrt(radius squared - length)
+                    vector = new Vector3((float)tx, (float)ty, (float)Math.Sqrt(1.0f - quadrance));
+                }
+                return vector;
+            }
+
+            public void mouse_down(PointF curr_Pt)
+            {
+                // Mouse down -> Map to sphere the clicked point
+                this.StVec = map_to_sphere(curr_Pt);
+            }
+
+            public Quaternion mouse_drag(PointF curr_Pt)
+            {
+                Quaternion newRot;
+
+                // Mouse drag -> Actively map the drag pt to sphere
+                this.EnVec = map_to_sphere(curr_Pt);
+
+                // Compute the vector perpendicular to the begin and end vectors
+                Vector3 Perp = Vector3.Cross(StVec, EnVec);
+
+                if (Perp.Length > 0.000001f)
+                {
+                    // return the perpendicular vector as the transform after all
+                    //  w is cosine (theta / 2), where theta is the rotation angle
+                    newRot = new Quaternion(Perp.X, Perp.Y, Perp.Z, Vector3.Dot(StVec, EnVec));
+                }
+                else
+                {
+                    newRot = new Quaternion(0, 0, 0, 1);
+                }
+                return newRot;
+            }
+        }
+
+
+
+        //_________________________________ARCBALL ROTATION Working version 1 _________________________________
+        //___________________________________________________________________________________________________________________
+        // ____________________________________________________________________________________________________________________________________
+
+          private readonly object matrixLock = new object();
+        private ArcBall arcball_control = new ArcBall(new Vector3(0,0,0));
+
+        Matrix4 Last_transformation = new Matrix4();
+        Matrix4 This_transformation = new Matrix4();
+
+        public Matrix4 rotation_matrix
+        {
+            get { return This_transformation; }
+        }
+
+        public Quaternion rotation_matrix_quaternion
+        {
+            get { return Quaternion.FromMatrix(new Matrix3(This_transformation)); }
+        }
+
+        public arcball_transformation()
+        {
+            // set initial rotation
+            for (int i = 0; i < 4; i++)
+            {
+                this.This_transformation[i, i] = 1.0F;
+            }
+
+            //// Isometric 1 as default
+            //this.This_transformation[0, 0] = 0.67969810962677f;
+            //this.This_transformation[0, 1] = 0.718355774879456f;
+            //this.This_transformation[0, 2] = -0.148240596055985f;
+
+            //this.This_transformation[1, 0] = 0.199809849262238f;
+            //this.This_transformation[1, 1] = -0.375794619321823f;
+            //this.This_transformation[1, 2] = -0.904905796051025f;
+
+            //this.This_transformation[2, 0] = -0.705752372741699f;
+            //this.This_transformation[2, 1] = 0.585442781448364f;
+            //this.This_transformation[2, 2] = -0.398961365222931f;
+
+            //// Initialize the quaternion with the rotation matrix
+            //this._m_quat = new Quaternion4f(_rotationM);
+        }
+
+        public void startRotationDrag(PointF MousePt)
+        {
+            /* SyncLock is used to protect data from being updated by more than one thread simultaneously. 
+             * If the statements that manipulate the data must go to completion without interruption,
+             * put them inside a SyncLock block.
+             */
+            lock (matrixLock)
+            {
+                // Last Transformation = This Transformation
+                Last_transformation = This_transformation;
+            }
+            arcball_control.mouse_down(MousePt);
+        }
+
+        public void Rotationdrag(PointF MousePt)
+        {
+            // Update End Vector And Get Rotation As Quaternion
+            Quaternion ThisQuat = arcball_control.mouse_drag(MousePt);
+
+            lock (matrixLock)
+            {
+                // Perform Rotation (convert quaternion to rotation matrix)
+                This_transformation = Matrix4.CreateFromQuaternion(ThisQuat);
+                // Amend it to previous rotation
+                This_transformation = Matrix4.Mult(This_transformation, Last_transformation);
+            }
+        }
+
+        //public void set_rotation_center(Vector3 Rotation_center)
+        //{
+
+        //}
+
+        public void set_predetermined_rotation(Quaternion ThisQuat)
+        {
+            // Set the pre-determined rotation matrix
+            This_transformation = Matrix4.CreateFromQuaternion(ThisQuat);
+        }
+
+        public void update_arcball(Vector3 rotation_center)
+        {
+            arcball_control = new ArcBall(rotation_center);
+        }
+
+        public class ArcBall
+        {
+            Vector3 StVec = new Vector3(0, 0, 0); // Saved Click Vector
+            Vector3 EnVec = new Vector3(0, 0, 0); // Saved Drag Vector
+            // double adjusted_width, adjusted_height;
+            // private double canvas_width, canvas_height;
+
+            Vector3 rot_center = new Vector3(0, 0, 0); // Rotation center
+
+            //public Vector3 start_vector { get { return StVec; } }
+
+            //public Vector3 end_vector { get { return EnVec; } }
+
+            public ArcBall(Vector3 rotation_center)
+            {
+                StVec = new Vector3(0, 0, 0);
+                EnVec = new Vector3(0, 0, 0);
+                // set_bounds(new_width, new_height);
+
+                this.rot_center = rotation_center;
+                //// Set adjustment factor for width/height
+                //adjusted_width = 1.0f / ((new_width - 1.0f) * 0.5f);
+                //adjusted_height = 1.0f / ((new_height - 1.0f) * 0.5f);
+
+                //adjusted_width = 10.0f; /// ((new_width - 1.0f) * 0.5f);
+                //adjusted_height = 10.0f; /// ((new_height - 1.0f) * 0.5f);
+
+                //canvas_width = new_width;
+                //canvas_height = new_height;
+            }
+
+            public Vector3 map_to_sphere(PointF tempPt)
+            {
+                double tx, ty;
+                Vector3 vector;
+
+                //// Adjust point coords and scale down to range of [-1 ... 1]
+                //tx = 1.0f - (tempPt.X * this.adjusted_width);
+                //ty = 1.0f - (tempPt.Y * this.adjusted_height);
+
+                tx = tempPt.X - rot_center.X;  //1.0f - (tempPt.X * this.adjusted_width);
+                ty = tempPt.Y - rot_center.Y; //1.0f - (tempPt.Y * this.adjusted_height);
+
+                // Compute square of the length of the vector from this point to the center
+                double quadrance = ((tx * tx) + (ty * ty));
+
+                if (quadrance > 1.0f)
+                {
+                    // the point is mapped outside the sphere... (length > radius squared)
+                    // Compute a normalizing factor (radius / length)
+                    double norm = 1.0f / Math.Sqrt(quadrance);
+                    vector = new Vector3((float)(tx * norm), (float)(ty * norm), 0.0f);
+                }
+                else
+                {
+                    // the point is mapped inside the sphere... (length <= radius squared)
+                    // return a vector to a point mapped inside the sphere sqrt(radius squared - length)
+                    vector = new Vector3((float)tx, (float)ty, (float)Math.Sqrt(1.0f - quadrance));
+                }
+
+                vector += rot_center;
+
+                return vector;
+            }
+
+            public void mouse_down(PointF curr_Pt)
+            {
+                // Mouse down -> Map to sphere the clicked point
+                this.StVec = map_to_sphere(curr_Pt);
+            }
+
+            public Quaternion mouse_drag(PointF curr_Pt)
+            {
+                Quaternion newRot;
+
+                // Mouse drag -> Actively map the drag pt to sphere
+                this.EnVec = map_to_sphere(curr_Pt);
+
+                // Compute the vector perpendicular to the begin and end vectors
+                Vector3 Perp = Vector3.Cross(StVec, EnVec);
+
+                if (Perp.Length > 0.000001f)
+                {
+                    // return the perpendicular vector as the transform after all
+                    //  w is cosine (theta / 2), where theta is the rotation angle
+                    newRot = new Quaternion(Perp.X, Perp.Y, Perp.Z, Vector3.Dot(StVec, EnVec));
+                }
+                else
+                {
+                    newRot = new Quaternion(0, 0, 0, 1);
+                }
+                return newRot;
+            }
+        }
+
+        //____________________________________________________________________________________________________________________________________
+        //____________________________________________________________________________________________________________________________________
+        //____________________________________________________________________________________________________________________________________
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//// Origin
+//origin_nodes = new nodes_store();
+//origin_nodes.add_point(1, 0.00000, 0.00000, -1.00000, node_clr);     //1
+//origin_nodes.add_point(2, 0.00000, 0.38268, -0.92388, node_clr);     //2
+//origin_nodes.add_point(3, 0.00000, 0.70711, -0.70711, node_clr);     //3
+//origin_nodes.add_point(4, 0.00000, 0.92388, -0.38268, node_clr);     //4
+//origin_nodes.add_point(5, 0.00000, 1.00000, 0.00000, node_clr);     //5
+//origin_nodes.add_point(6, 0.00000, 0.92388, 0.38268, node_clr);     //6
+//origin_nodes.add_point(7, 0.00000, 0.70711, 0.70711, node_clr);     //7
+//origin_nodes.add_point(8, 0.00000, 0.38268, 0.92388, node_clr);     //8
+//origin_nodes.add_point(9, 0.00000, 0.00000, 1.00000, node_clr);     //9
+//origin_nodes.add_point(10, -0.39179, -0.70716, -0.58858, node_clr);     //10
+//origin_nodes.add_point(11, -0.71629, -0.61126, -0.33660, node_clr);     //11
+//origin_nodes.add_point(12, -0.42389, -0.37708, -0.82349, node_clr);     //12
+//origin_nodes.add_point(13, -0.78286, -0.27388, -0.55867, node_clr);     //13
+//origin_nodes.add_point(14, -0.27571, -0.92124, -0.27441, node_clr);     //14
+//origin_nodes.add_point(15, -0.03517, -0.71775, -0.69541, node_clr);     //15
+//origin_nodes.add_point(16, -0.52886, -0.84586, -0.06951, node_clr);     //16
+//origin_nodes.add_point(17, -0.88826, -0.45894, 0.01930, node_clr);     //17
+//origin_nodes.add_point(18, -0.40303, 0.00047, -0.91519, node_clr);     //18
+//origin_nodes.add_point(19, 0.08250, -0.36052, -0.92910, node_clr);     //19
+//origin_nodes.add_point(20, -0.73092, 0.14048, -0.66785, node_clr);     //20
+//origin_nodes.add_point(21, 0.05731, -0.92076, -0.38590, node_clr);     //21
+//origin_nodes.add_point(22, -0.97743, -0.12512, -0.17023, node_clr);     //22
+//origin_nodes.add_point(23, -0.66368, -0.71603, 0.21639, node_clr);     //23
+//origin_nodes.add_point(24, 0.32015, -0.61181, -0.72332, node_clr);     //24
+//origin_nodes.add_point(25, -0.92432, 0.22671, -0.30697, node_clr);     //25
+//origin_nodes.add_point(26, 0.00220, -0.99993, 0.01127, node_clr);     //26
+//origin_nodes.add_point(27, -0.32673, -0.90113, 0.28497, node_clr);     //27
+//origin_nodes.add_point(28, 0.39561, -0.82894, -0.39541, node_clr);     //28
+//origin_nodes.add_point(29, -0.88177, -0.28344, 0.37702, node_clr);     //29
+//origin_nodes.add_point(30, -0.40442, 0.37307, -0.83502, node_clr);     //30
+//origin_nodes.add_point(31, -0.72471, 0.52387, -0.44761, node_clr);     //31
+//origin_nodes.add_point(32, -0.97018, 0.06525, 0.23343, node_clr);     //32
+//origin_nodes.add_point(33, -0.65647, -0.53761, 0.52917, node_clr);     //33
+//origin_nodes.add_point(34, 0.03142, -0.91966, 0.39145, node_clr);     //34
+//origin_nodes.add_point(35, 0.39993, -0.91638, -0.01717, node_clr);     //35
+//origin_nodes.add_point(36, 0.62427, -0.43471, -0.64908, node_clr);     //36
+//origin_nodes.add_point(37, -0.90277, 0.42475, 0.06779, node_clr);     //37
+//origin_nodes.add_point(38, 0.56710, -0.13316, -0.81281, node_clr);     //38
+//origin_nodes.add_point(39, -0.40803, 0.69086, -0.59684, node_clr);     //39
+//origin_nodes.add_point(40, -0.33647, -0.68845, 0.64251, node_clr);     //40
+//origin_nodes.add_point(41, 0.69079, -0.63176, -0.35169, node_clr);     //41
+//origin_nodes.add_point(42, -0.66679, -0.19179, 0.72014, node_clr);     //42
+//origin_nodes.add_point(43, 0.35911, -0.86414, 0.35256, node_clr);     //43
+//origin_nodes.add_point(44, -0.68338, 0.72244, -0.10520, node_clr);     //44
+//origin_nodes.add_point(45, 0.48671, 0.21435, -0.84686, node_clr);     //45
+//origin_nodes.add_point(46, 0.04172, -0.69766, 0.71522, node_clr);     //46
+//origin_nodes.add_point(47, -0.77251, 0.19992, 0.60271, node_clr);     //47
+//origin_nodes.add_point(48, 0.72512, -0.68831, 0.02071, node_clr);     //48
+//origin_nodes.add_point(49, -0.32395, -0.38932, 0.86226, node_clr);     //49
+//origin_nodes.add_point(50, 0.35156, 0.56365, -0.74747, node_clr);     //50
+//origin_nodes.add_point(51, 0.86929, -0.33762, -0.36103, node_clr);     //51
+//origin_nodes.add_point(52, -0.34748, 0.91631, -0.19910, node_clr);     //52
+//origin_nodes.add_point(53, -0.72253, 0.56327, 0.40084, node_clr);     //53
+//origin_nodes.add_point(54, 0.64073, -0.66732, 0.37967, node_clr);     //54
+//origin_nodes.add_point(55, -0.37133, -0.02852, 0.92806, node_clr);     //55
+//origin_nodes.add_point(56, 0.40049, -0.65316, 0.64264, node_clr);     //56
+//origin_nodes.add_point(57, 0.08808, -0.36927, 0.92514, node_clr);     //57
+//origin_nodes.add_point(58, 0.93235, -0.35839, 0.04767, node_clr);     //58
+//origin_nodes.add_point(59, 0.89730, 0.00345, -0.44140, node_clr);     //59
+//origin_nodes.add_point(60, -0.43874, 0.86646, 0.23824, node_clr);     //60
+//origin_nodes.add_point(61, -0.43016, 0.33976, 0.83638, node_clr);     //61
+//origin_nodes.add_point(62, 0.35456, 0.84656, -0.39701, node_clr);     //62
+//origin_nodes.add_point(63, 0.81593, 0.34493, -0.46399, node_clr);     //63
+//origin_nodes.add_point(64, 0.81538, -0.34527, 0.46470, node_clr);     //64
+//origin_nodes.add_point(65, -0.40624, 0.66900, 0.62242, node_clr);     //65
+//origin_nodes.add_point(66, 0.64466, 0.63958, -0.41874, node_clr);     //66
+//origin_nodes.add_point(67, 0.50571, -0.33169, 0.79639, node_clr);     //67
+//origin_nodes.add_point(68, 0.99899, 0.02974, 0.03365, node_clr);     //68
+//origin_nodes.add_point(69, 0.38269, 0.92386, 0.00584, node_clr);     //69
+//origin_nodes.add_point(70, 0.86901, 0.04614, 0.49263, node_clr);     //70
+//origin_nodes.add_point(71, 0.91329, 0.40699, 0.01586, node_clr);     //71
+//origin_nodes.add_point(72, 0.51954, 0.06846, 0.85170, node_clr);     //72
+//origin_nodes.add_point(73, 0.69581, 0.71822, 0.00230, node_clr);     //73
+//origin_nodes.add_point(74, 0.78434, 0.42803, 0.44899, node_clr);     //74
+//origin_nodes.add_point(75, 0.41748, 0.49535, 0.76180, node_clr);     //75
+//origin_nodes.add_point(76, 0.48947, 0.77419, 0.40130, node_clr);     //76
+
+//origin_tris = new tri_elements();
+//origin_tris.add_triangle(1, 12, 10, 13);     //1
+//origin_tris.add_triangle(2, 16, 11, 14);     //2
+//origin_tris.add_triangle(3, 19, 15, 12);     //3
+//origin_tris.add_triangle(4, 18, 12, 20);     //4
+//origin_tris.add_triangle(5, 14, 10, 21);     //5
+//origin_tris.add_triangle(6, 13, 11, 22);     //6
+//origin_tris.add_triangle(7, 23, 17, 16);     //7
+//origin_tris.add_triangle(8, 1, 19, 18);     //8
+//origin_tris.add_triangle(9, 20, 13, 25);     //9
+//origin_tris.add_triangle(10, 24, 15, 19);     //10
+//origin_tris.add_triangle(11, 14, 21, 26);     //11
+//origin_tris.add_triangle(12, 16, 14, 27);     //12
+//origin_tris.add_triangle(13, 16, 27, 23);     //13
+//origin_tris.add_triangle(14, 24, 28, 15);     //14
+//origin_tris.add_triangle(15, 20, 30, 18);     //15
+//origin_tris.add_triangle(16, 29, 32, 17);     //16
+//origin_tris.add_triangle(17, 25, 31, 20);     //17
+//origin_tris.add_triangle(18, 29, 17, 23);     //18
+//origin_tris.add_triangle(19, 28, 35, 21);     //19
+//origin_tris.add_triangle(20, 30, 2, 18);     //20
+//origin_tris.add_triangle(21, 32, 37, 22);     //21
+//origin_tris.add_triangle(22, 26, 34, 27);     //22
+//origin_tris.add_triangle(23, 36, 24, 38);     //23
+//origin_tris.add_triangle(24, 20, 31, 30);     //24
+//origin_tris.add_triangle(25, 33, 23, 40);     //25
+//origin_tris.add_triangle(26, 45, 38, 1);     //26
+//origin_tris.add_triangle(27, 36, 41, 24);     //27
+//origin_tris.add_triangle(28, 25, 37, 31);     //28
+//origin_tris.add_triangle(29, 34, 26, 43);     //29
+//origin_tris.add_triangle(30, 42, 29, 33);     //30
+//origin_tris.add_triangle(31, 46, 40, 34);     //31
+//origin_tris.add_triangle(32, 42, 47, 29);     //32
+//origin_tris.add_triangle(33, 30, 39, 3);     //33
+//origin_tris.add_triangle(34, 45, 1, 2);     //34
+//origin_tris.add_triangle(35, 41, 48, 28);     //35
+//origin_tris.add_triangle(36, 40, 49, 33);     //36
+//origin_tris.add_triangle(37, 31, 44, 39);     //37
+//origin_tris.add_triangle(38, 47, 53, 32);     //38
+//origin_tris.add_triangle(39, 51, 41, 36);     //39
+//origin_tris.add_triangle(40, 50, 2, 3);     //40
+//origin_tris.add_triangle(41, 43, 35, 54);     //41
+//origin_tris.add_triangle(42, 34, 43, 46);     //42
+//origin_tris.add_triangle(43, 59, 51, 38);     //43
+//origin_tris.add_triangle(44, 44, 37, 53);     //44
+//origin_tris.add_triangle(45, 40, 46, 49);     //45
+//origin_tris.add_triangle(46, 3, 39, 4);     //46
+//origin_tris.add_triangle(47, 49, 55, 42);     //47
+//origin_tris.add_triangle(48, 51, 58, 41);     //48
+//origin_tris.add_triangle(49, 43, 54, 56);     //49
+//origin_tris.add_triangle(50, 38, 45, 59);     //50
+//origin_tris.add_triangle(51, 44, 60, 52);     //51
+//origin_tris.add_triangle(52, 55, 61, 42);     //52
+//origin_tris.add_triangle(53, 4, 62, 3);     //53
+//origin_tris.add_triangle(54, 66, 63, 50);     //54
+//origin_tris.add_triangle(55, 54, 48, 64);     //55
+//origin_tris.add_triangle(56, 61, 65, 47);     //56
+//origin_tris.add_triangle(57, 67, 57, 56);     //57
+//origin_tris.add_triangle(58, 49, 57, 55);     //58
+//origin_tris.add_triangle(59, 53, 65, 60);     //59
+//origin_tris.add_triangle(60, 52, 5, 4);     //60
+//origin_tris.add_triangle(61, 59, 68, 51);     //61
+//origin_tris.add_triangle(62, 62, 66, 50);     //62
+//origin_tris.add_triangle(63, 56, 54, 67);     //63
+//origin_tris.add_triangle(64, 52, 60, 5);     //64
+//origin_tris.add_triangle(65, 9, 8, 55);     //65
+//origin_tris.add_triangle(66, 62, 4, 69);     //66
+//origin_tris.add_triangle(67, 71, 68, 63);     //67
+//origin_tris.add_triangle(68, 64, 58, 70);     //68
+//origin_tris.add_triangle(69, 57, 67, 9);     //69
+//origin_tris.add_triangle(70, 60, 65, 6);     //70
+//origin_tris.add_triangle(71, 8, 7, 61);     //71
+//origin_tris.add_triangle(72, 66, 62, 73);     //72
+//origin_tris.add_triangle(73, 73, 71, 66);     //73
+//origin_tris.add_triangle(74, 67, 64, 72);     //74
+//origin_tris.add_triangle(75, 74, 70, 71);     //75
+//origin_tris.add_triangle(76, 6, 76, 69);     //76
+//origin_tris.add_triangle(77, 75, 8, 72);     //77
+//origin_tris.add_triangle(78, 8, 75, 7);     //78
+//origin_tris.add_triangle(79, 76, 73, 69);     //79
+//origin_tris.add_triangle(80, 74, 75, 72);     //80
+//origin_tris.add_triangle(81, 76, 74, 73);     //81
+//origin_tris.add_triangle(82, 76, 6, 7);     //82
+//origin_tris.add_triangle(83, 74, 76, 75);     //83
+//origin_tris.add_triangle(84, 7, 75, 76);     //84
+//origin_tris.add_triangle(85, 74, 71, 73);     //85
+//origin_tris.add_triangle(86, 72, 70, 74);     //86
+//origin_tris.add_triangle(87, 8, 9, 72);     //87
+//origin_tris.add_triangle(88, 69, 5, 6);     //88
+//origin_tris.add_triangle(89, 70, 68, 71);     //89
+//origin_tris.add_triangle(90, 64, 70, 72);     //90
+//origin_tris.add_triangle(91, 71, 63, 66);     //91
+//origin_tris.add_triangle(92, 62, 69, 73);     //92
+//origin_tris.add_triangle(93, 7, 65, 61);     //93
+//origin_tris.add_triangle(94, 65, 7, 6);     //94
+//origin_tris.add_triangle(95, 67, 72, 9);     //95
+//origin_tris.add_triangle(96, 58, 68, 70);     //96
+//origin_tris.add_triangle(97, 68, 59, 63);     //97
+//origin_tris.add_triangle(98, 4, 5, 69);     //98
+//origin_tris.add_triangle(99, 8, 61, 55);     //99
+//origin_tris.add_triangle(100, 60, 6, 5);     //100
+//origin_tris.add_triangle(101, 54, 64, 67);     //101
+//origin_tris.add_triangle(102, 68, 58, 51);     //102
+//origin_tris.add_triangle(103, 57, 9, 55);     //103
+//origin_tris.add_triangle(104, 57, 46, 56);     //104
+//origin_tris.add_triangle(105, 65, 53, 47);     //105
+//origin_tris.add_triangle(106, 48, 58, 64);     //106
+//origin_tris.add_triangle(107, 63, 45, 50);     //107
+//origin_tris.add_triangle(108, 62, 50, 3);     //108
+//origin_tris.add_triangle(109, 61, 47, 42);     //109
+//origin_tris.add_triangle(110, 45, 63, 59);     //110
+//origin_tris.add_triangle(111, 58, 48, 41);     //111
+//origin_tris.add_triangle(112, 39, 52, 4);     //112
+//origin_tris.add_triangle(113, 46, 57, 49);     //113
+//origin_tris.add_triangle(114, 53, 60, 44);     //114
+//origin_tris.add_triangle(115, 51, 36, 38);     //115
+//origin_tris.add_triangle(116, 43, 56, 46);     //116
+//origin_tris.add_triangle(117, 35, 48, 54);     //117
+//origin_tris.add_triangle(118, 53, 37, 32);     //118
+//origin_tris.add_triangle(119, 44, 52, 39);     //119
+//origin_tris.add_triangle(120, 49, 42, 33);     //120
+//origin_tris.add_triangle(121, 48, 35, 28);     //121
+//origin_tris.add_triangle(122, 2, 50, 45);     //122
+//origin_tris.add_triangle(123, 3, 2, 30);     //123
+//origin_tris.add_triangle(124, 47, 32, 29);     //124
+//origin_tris.add_triangle(125, 40, 27, 34);     //125
+//origin_tris.add_triangle(126, 26, 35, 43);     //126
+//origin_tris.add_triangle(127, 37, 44, 31);     //127
+//origin_tris.add_triangle(128, 41, 28, 24);     //128
+//origin_tris.add_triangle(129, 38, 19, 1);     //129
+//origin_tris.add_triangle(130, 23, 27, 40);     //130
+//origin_tris.add_triangle(131, 31, 39, 30);     //131
+//origin_tris.add_triangle(132, 24, 19, 38);     //132
+//origin_tris.add_triangle(133, 37, 25, 22);     //133
+//origin_tris.add_triangle(134, 2, 1, 18);     //134
+//origin_tris.add_triangle(135, 35, 26, 21);     //135
+//origin_tris.add_triangle(136, 23, 33, 29);     //136
+//origin_tris.add_triangle(137, 32, 22, 17);     //137
+//origin_tris.add_triangle(138, 28, 21, 15);     //138
+//origin_tris.add_triangle(139, 14, 26, 27);     //139
+//origin_tris.add_triangle(140, 13, 22, 25);     //140
+//origin_tris.add_triangle(141, 19, 12, 18);     //141
+//origin_tris.add_triangle(142, 17, 11, 16);     //142
+//origin_tris.add_triangle(143, 11, 17, 22);     //143
+//origin_tris.add_triangle(144, 10, 15, 21);     //144
+//origin_tris.add_triangle(145, 12, 13, 20);     //145
+//origin_tris.add_triangle(146, 15, 10, 12);     //146
+//origin_tris.add_triangle(147, 11, 10, 14);     //147
+//origin_tris.add_triangle(0, 10, 11, 13);     //0
+//                                             //_________________________________________________________________
+
+//// X axis
+//x_axis_nodes = new nodes_store();
+//x_axis_nodes.add_point(77, 12.73585, 0.31033, 0.00822, x_axis_clr);     //77
+//x_axis_nodes.add_point(78, 13.51016, -0.07719, -0.06964, x_axis_clr);     //78
+//x_axis_nodes.add_point(79, 13.29293, -0.14509, -0.07180, x_axis_clr);     //79
+//x_axis_nodes.add_point(80, 13.44256, -0.11381, 0.04389, x_axis_clr);     //80
+//x_axis_nodes.add_point(81, 13.03628, -0.21092, -0.09254, x_axis_clr);     //81
+//x_axis_nodes.add_point(82, 13.14450, -0.10814, -0.16998, x_axis_clr);     //82
+//x_axis_nodes.add_point(83, 13.53924, -0.01375, 0.09521, x_axis_clr);     //83
+//x_axis_nodes.add_point(84, 13.16987, -0.18373, 0.06443, x_axis_clr);     //84
+//x_axis_nodes.add_point(85, 13.38273, 0.08179, 0.11107, x_axis_clr);     //85
+//x_axis_nodes.add_point(86, 13.03667, 0.00583, 0.23015, x_axis_clr);     //86
+//x_axis_nodes.add_point(87, 13.25976, -0.03831, 0.16638, x_axis_clr);     //87
+//x_axis_nodes.add_point(88, 13.01161, -0.14375, 0.18831, x_axis_clr);     //88
+//x_axis_nodes.add_point(89, 12.58845, -0.17014, -0.30557, x_axis_clr);     //89
+//x_axis_nodes.add_point(90, 12.51540, -0.32958, -0.16644, x_axis_clr);     //90
+//x_axis_nodes.add_point(91, 12.52287, -0.26414, 0.25513, x_axis_clr);     //91
+//x_axis_nodes.add_point(92, 12.58998, -0.34528, 0.05312, x_axis_clr);     //92
+//x_axis_nodes.add_point(93, 12.85133, -0.07227, 0.27015, x_axis_clr);     //93
+//x_axis_nodes.add_point(94, 12.75697, -0.21768, 0.21337, x_axis_clr);     //94
+//x_axis_nodes.add_point(95, 12.89675, -0.26178, 0.05518, x_axis_clr);     //95
+//x_axis_nodes.add_point(96, 12.76128, -0.27474, -0.12934, x_axis_clr);     //96
+//x_axis_nodes.add_point(97, 12.90114, -0.13883, -0.22732, x_axis_clr);     //97
+//x_axis_nodes.add_point(98, 13.30986, 0.15723, 0.00665, x_axis_clr);     //98
+//x_axis_nodes.add_point(99, 13.00882, 0.23746, 0.00951, x_axis_clr);     //99
+//x_axis_nodes.add_point(100, 12.55109, 0.31823, 0.16769, x_axis_clr);     //100
+//x_axis_nodes.add_point(101, 12.57058, 0.16606, 0.31321, x_axis_clr);     //101
+//x_axis_nodes.add_point(102, 12.81652, 0.23426, 0.16912, x_axis_clr);     //102
+//x_axis_nodes.add_point(103, 13.10968, 0.14162, 0.15608, x_axis_clr);     //103
+//x_axis_nodes.add_point(104, 12.83670, 0.08433, 0.27072, x_axis_clr);     //104
+//x_axis_nodes.add_point(105, 12.59297, -0.06882, 0.34168, x_axis_clr);     //105
+//x_axis_nodes.add_point(106, 12.02109, -0.20534, -0.45703, x_axis_clr);     //106
+//x_axis_nodes.add_point(107, 12.03077, -0.43536, -0.24276, x_axis_clr);     //107
+//x_axis_nodes.add_point(108, 11.75835, -0.39983, -0.40779, x_axis_clr);     //108
+//x_axis_nodes.add_point(109, 12.03191, -0.36699, 0.33686, x_axis_clr);     //109
+//x_axis_nodes.add_point(110, 11.76118, -0.50799, 0.25933, x_axis_clr);     //110
+//x_axis_nodes.add_point(111, 12.03200, -0.49454, 0.05969, x_axis_clr);     //111
+//x_axis_nodes.add_point(112, 11.76140, -0.56382, -0.08570, x_axis_clr);     //112
+//x_axis_nodes.add_point(113, 11.19405, -0.24861, -0.67741, x_axis_clr);     //113
+//x_axis_nodes.add_point(114, 11.20456, -0.57183, -0.43550, x_axis_clr);     //114
+//x_axis_nodes.add_point(115, 11.20728, -0.71751, -0.02812, x_axis_clr);     //115
+//x_axis_nodes.add_point(116, 11.48850, -0.62786, 0.13903, x_axis_clr);     //116
+//x_axis_nodes.add_point(117, 11.48753, -0.59229, -0.25111, x_axis_clr);     //117
+//x_axis_nodes.add_point(118, 11.47922, -0.33651, -0.55089, x_axis_clr);     //118
+//x_axis_nodes.add_point(119, 12.03228, 0.20292, 0.45485, x_axis_clr);     //119
+//x_axis_nodes.add_point(120, 11.76221, 0.08415, 0.56383, x_axis_clr);     //120
+//x_axis_nodes.add_point(121, 11.20870, -0.25716, 0.67002, x_axis_clr);     //121
+//x_axis_nodes.add_point(122, 11.48984, -0.07034, 0.63885, x_axis_clr);     //122
+//x_axis_nodes.add_point(123, 12.03209, -0.10173, 0.48761, x_axis_clr);     //123
+//x_axis_nodes.add_point(124, 11.76145, -0.26234, 0.50635, x_axis_clr);     //124
+//x_axis_nodes.add_point(125, 11.48892, -0.43064, 0.47743, x_axis_clr);     //125
+//x_axis_nodes.add_point(126, 11.20795, -0.60014, 0.39394, x_axis_clr);     //126
+//x_axis_nodes.add_point(127, 12.30017, 0.28320, 0.31907, x_axis_clr);     //127
+//x_axis_nodes.add_point(128, 12.30373, 0.04533, 0.42325, x_axis_clr);     //128
+//x_axis_nodes.add_point(129, 12.30041, -0.21149, 0.37044, x_axis_clr);     //129
+//x_axis_nodes.add_point(130, 12.30137, -0.38706, 0.17865, x_axis_clr);     //130
+//x_axis_nodes.add_point(131, 12.29901, -0.41889, -0.08244, x_axis_clr);     //131
+//x_axis_nodes.add_point(132, 12.29487, -0.29025, -0.31460, x_axis_clr);     //132
+//x_axis_nodes.add_point(133, 13.48273, 0.07869, -0.07867, x_axis_clr);     //133
+//x_axis_nodes.add_point(134, 13.14485, 0.14596, -0.13874, x_axis_clr);     //134
+//x_axis_nodes.add_point(135, 12.66600, 0.16983, -0.28185, x_axis_clr);     //135
+//x_axis_nodes.add_point(136, 12.57250, 0.31269, -0.16595, x_axis_clr);     //136
+//x_axis_nodes.add_point(137, 12.90382, 0.12883, -0.23232, x_axis_clr);     //137
+//x_axis_nodes.add_point(138, 11.78687, 0.50525, -0.24952, x_axis_clr);     //138
+//x_axis_nodes.add_point(139, 11.86298, 0.27370, -0.46921, x_axis_clr);     //139
+//x_axis_nodes.add_point(140, 12.06332, 0.38790, -0.29903, x_axis_clr);     //140
+//x_axis_nodes.add_point(141, 12.10258, 0.19780, -0.43659, x_axis_clr);     //141
+//x_axis_nodes.add_point(142, 11.76583, 0.56167, 0.09175, x_axis_clr);     //142
+//x_axis_nodes.add_point(143, 12.03667, 0.49541, -0.03835, x_axis_clr);     //143
+//x_axis_nodes.add_point(144, 11.20404, 0.26074, -0.66997, x_axis_clr);     //144
+//x_axis_nodes.add_point(145, 11.21647, 0.59171, -0.40247, x_axis_clr);     //145
+//x_axis_nodes.add_point(146, 11.20999, 0.55991, 0.44841, x_axis_clr);     //146
+//x_axis_nodes.add_point(147, 11.21153, 0.71634, 0.02899, x_axis_clr);     //147
+//x_axis_nodes.add_point(148, 11.53904, 0.36951, -0.50975, x_axis_clr);     //148
+//x_axis_nodes.add_point(149, 11.50162, 0.62290, -0.14508, x_axis_clr);     //149
+//x_axis_nodes.add_point(150, 11.49229, 0.58825, 0.25728, x_axis_clr);     //150
+//x_axis_nodes.add_point(151, 12.35743, 0.23547, -0.33729, x_axis_clr);     //151
+//x_axis_nodes.add_point(152, 12.30543, 0.40338, -0.13452, x_axis_clr);     //152
+//x_axis_nodes.add_point(153, 12.83892, 0.24336, -0.14435, x_axis_clr);     //153
+//x_axis_nodes.add_point(154, 12.50679, 0.37150, -0.00416, x_axis_clr);     //154
+//x_axis_nodes.add_point(155, 12.29430, 0.41481, 0.10620, x_axis_clr);     //155
+//x_axis_nodes.add_point(156, 12.03197, 0.42999, 0.25150, x_axis_clr);     //156
+//x_axis_nodes.add_point(157, 11.76286, 0.40068, 0.40527, x_axis_clr);     //157
+//x_axis_nodes.add_point(158, 11.49081, 0.32033, 0.55689, x_axis_clr);     //158
+//x_axis_nodes.add_point(159, 11.20947, 0.18644, 0.69283, x_axis_clr);     //159
+//x_axis_nodes.add_point(160, 11.17500, 0.00000, -0.72667, x_axis_clr);     //160
+//x_axis_nodes.add_point(161, 11.45000, 0.00000, -0.65333, x_axis_clr);     //161
+//x_axis_nodes.add_point(162, 11.72500, 0.00000, -0.58000, x_axis_clr);     //162
+//x_axis_nodes.add_point(163, 12.00000, 0.00000, -0.50667, x_axis_clr);     //163
+//x_axis_nodes.add_point(164, 12.27500, 0.00000, -0.43333, x_axis_clr);     //164
+//x_axis_nodes.add_point(165, 12.55000, 0.00000, -0.36000, x_axis_clr);     //165
+//x_axis_nodes.add_point(166, 12.82500, 0.00000, -0.28667, x_axis_clr);     //166
+//x_axis_nodes.add_point(167, 13.10000, 0.00000, -0.21333, x_axis_clr);     //167
+//x_axis_nodes.add_point(168, 13.37500, 0.00000, -0.14000, x_axis_clr);     //168
+//x_axis_nodes.add_point(169, 13.65000, 0.03919, -0.05393, x_axis_clr);     //169
+//x_axis_nodes.add_point(170, 13.65000, 0.06340, -0.02060, x_axis_clr);     //170
+//x_axis_nodes.add_point(171, 13.65000, 0.06340, 0.02060, x_axis_clr);     //171
+//x_axis_nodes.add_point(172, 13.65000, 0.03919, 0.05393, x_axis_clr);     //172
+//x_axis_nodes.add_point(173, 13.65000, 0.00000, 0.06667, x_axis_clr);     //173
+//x_axis_nodes.add_point(174, 13.65000, -0.03919, 0.05393, x_axis_clr);     //174
+//x_axis_nodes.add_point(175, 13.65000, -0.06340, 0.02060, x_axis_clr);     //175
+//x_axis_nodes.add_point(176, 13.65000, -0.06340, -0.02060, x_axis_clr);     //176
+//x_axis_nodes.add_point(177, 13.65000, -0.03919, -0.05393, x_axis_clr);     //177
+//x_axis_nodes.add_point(178, 13.65000, 0.00000, -0.06667, x_axis_clr);     //178
+//x_axis_nodes.add_point(179, 10.89995, 0.38033, -0.12351, x_axis_clr);     //179
+//x_axis_nodes.add_point(180, 10.89993, 0.23497, 0.32350, x_axis_clr);     //180
+//x_axis_nodes.add_point(181, 10.89987, -0.23517, 0.32356, x_axis_clr);     //181
+//x_axis_nodes.add_point(182, 10.89985, -0.38030, -0.12360, x_axis_clr);     //182
+//x_axis_nodes.add_point(183, 10.89990, 0.00000, -0.40000, x_axis_clr);     //183
+//x_axis_nodes.add_point(184, 10.89985, -0.46624, -0.64218, x_axis_clr);     //184
+//x_axis_nodes.add_point(185, 10.89981, -0.75696, -0.24559, x_axis_clr);     //185
+//x_axis_nodes.add_point(186, 10.89981, -0.75672, 0.24562, x_axis_clr);     //186
+//x_axis_nodes.add_point(187, 10.89984, -0.46966, 0.64622, x_axis_clr);     //187
+//x_axis_nodes.add_point(188, 10.89990, -0.00023, 0.79322, x_axis_clr);     //188
+//x_axis_nodes.add_point(189, 10.89996, 0.46872, 0.64551, x_axis_clr);     //189
+//x_axis_nodes.add_point(190, 10.89999, 0.75663, 0.24598, x_axis_clr);     //190
+//x_axis_nodes.add_point(191, 10.90000, 0.75548, -0.24534, x_axis_clr);     //191
+//x_axis_nodes.add_point(192, 10.89996, 0.46899, -0.64512, x_axis_clr);     //192
+//x_axis_nodes.add_point(193, 10.90002, 0.00000, -0.80006, x_axis_clr);     //193
+//x_axis_nodes.add_point(194, 1.25211, 0.38615, -0.10435, x_axis_clr);     //194
+//x_axis_nodes.add_point(195, 1.71604, 0.38173, -0.11950, x_axis_clr);     //195
+//x_axis_nodes.add_point(196, 1.48323, 0.23425, 0.32423, x_axis_clr);     //196
+//x_axis_nodes.add_point(197, 2.70428, 0.38017, -0.12438, x_axis_clr);     //197
+//x_axis_nodes.add_point(198, 2.50849, 0.23608, 0.32290, x_axis_clr);     //198
+//x_axis_nodes.add_point(199, 2.20713, 0.38030, -0.12399, x_axis_clr);     //199
+//x_axis_nodes.add_point(200, 2.00449, 0.23615, 0.32285, x_axis_clr);     //200
+//x_axis_nodes.add_point(201, 1.21821, -0.37677, -0.13433, x_axis_clr);     //201
+//x_axis_nodes.add_point(202, 2.11907, -0.38006, -0.12471, x_axis_clr);     //202
+//x_axis_nodes.add_point(203, 1.64456, -0.38050, -0.12336, x_axis_clr);     //203
+//x_axis_nodes.add_point(204, 2.31470, -0.23407, 0.32437, x_axis_clr);     //204
+//x_axis_nodes.add_point(205, 1.82259, -0.22854, 0.32828, x_axis_clr);     //205
+//x_axis_nodes.add_point(206, 1.33673, -0.21169, 0.33939, x_axis_clr);     //206
+//x_axis_nodes.add_point(207, 3.70051, 0.38040, -0.12368, x_axis_clr);     //207
+//x_axis_nodes.add_point(208, 3.50159, 0.23506, 0.32364, x_axis_clr);     //208
+//x_axis_nodes.add_point(209, 3.10323, -0.38009, -0.12462, x_axis_clr);     //209
+//x_axis_nodes.add_point(210, 3.30280, -0.23551, 0.32332, x_axis_clr);     //210
+//x_axis_nodes.add_point(211, 3.20169, 0.38032, -0.12392, x_axis_clr);     //211
+//x_axis_nodes.add_point(212, 3.00452, 0.23524, 0.32352, x_axis_clr);     //212
+//x_axis_nodes.add_point(213, 2.80728, -0.23532, 0.32345, x_axis_clr);     //213
+//x_axis_nodes.add_point(214, 2.60863, -0.37995, -0.12507, x_axis_clr);     //214
+//x_axis_nodes.add_point(215, 5.50000, 0.23509, 0.32363, x_axis_clr);     //215
+//x_axis_nodes.add_point(216, 6.00000, 0.23509, 0.32363, x_axis_clr);     //216
+//x_axis_nodes.add_point(217, 5.70000, 0.38043, -0.12360, x_axis_clr);     //217
+//x_axis_nodes.add_point(218, 6.20000, 0.38042, -0.12360, x_axis_clr);     //218
+//x_axis_nodes.add_point(219, 4.50000, 0.23508, 0.32363, x_axis_clr);     //219
+//x_axis_nodes.add_point(220, 4.70000, 0.38043, -0.12360, x_axis_clr);     //220
+//x_axis_nodes.add_point(221, 5.00000, 0.23508, 0.32363, x_axis_clr);     //221
+//x_axis_nodes.add_point(222, 5.20000, 0.38043, -0.12360, x_axis_clr);     //222
+//x_axis_nodes.add_point(223, 5.60000, -0.38038, -0.12374, x_axis_clr);     //223
+//x_axis_nodes.add_point(224, 5.10000, -0.38037, -0.12376, x_axis_clr);     //224
+//x_axis_nodes.add_point(225, 4.10000, -0.38037, -0.12378, x_axis_clr);     //225
+//x_axis_nodes.add_point(226, 4.60000, -0.38037, -0.12377, x_axis_clr);     //226
+//x_axis_nodes.add_point(227, 5.80000, -0.23516, 0.32357, x_axis_clr);     //227
+//x_axis_nodes.add_point(228, 5.30000, -0.23516, 0.32357, x_axis_clr);     //228
+//x_axis_nodes.add_point(229, 4.80000, -0.23517, 0.32357, x_axis_clr);     //229
+//x_axis_nodes.add_point(230, 4.30000, -0.23517, 0.32356, x_axis_clr);     //230
+//x_axis_nodes.add_point(231, 4.20000, 0.38043, -0.12360, x_axis_clr);     //231
+//x_axis_nodes.add_point(232, 4.00000, 0.23508, 0.32363, x_axis_clr);     //232
+//x_axis_nodes.add_point(233, 3.80060, -0.23528, 0.32348, x_axis_clr);     //233
+//x_axis_nodes.add_point(234, 3.60078, -0.38031, -0.12397, x_axis_clr);     //234
+//x_axis_nodes.add_point(235, 10.54642, -0.38631, -0.10374, x_axis_clr);     //235
+//x_axis_nodes.add_point(236, 10.31426, -0.23406, 0.32437, x_axis_clr);     //236
+//x_axis_nodes.add_point(237, 9.59032, -0.38041, -0.12364, x_axis_clr);     //237
+//x_axis_nodes.add_point(238, 8.59704, -0.38010, -0.12461, x_axis_clr);     //238
+//x_axis_nodes.add_point(239, 9.09416, -0.38011, -0.12458, x_axis_clr);     //239
+//x_axis_nodes.add_point(240, 8.79205, -0.23589, 0.32304, x_axis_clr);     //240
+//x_axis_nodes.add_point(241, 9.28729, -0.23593, 0.32302, x_axis_clr);     //241
+//x_axis_nodes.add_point(242, 10.08155, -0.38184, -0.11915, x_axis_clr);     //242
+//x_axis_nodes.add_point(243, 9.79177, -0.23570, 0.32318, x_axis_clr);     //243
+//x_axis_nodes.add_point(244, 10.58143, 0.37691, -0.13394, x_axis_clr);     //244
+//x_axis_nodes.add_point(245, 10.15422, 0.38064, -0.12292, x_axis_clr);     //245
+//x_axis_nodes.add_point(246, 9.18811, 0.38009, -0.12461, x_axis_clr);     //246
+//x_axis_nodes.add_point(247, 9.67883, 0.38017, -0.12437, x_axis_clr);     //247
+//x_axis_nodes.add_point(248, 8.98773, 0.23510, 0.32362, x_axis_clr);     //248
+//x_axis_nodes.add_point(249, 9.48069, 0.23412, 0.32433, x_axis_clr);     //249
+//x_axis_nodes.add_point(250, 9.97429, 0.22859, 0.32825, x_axis_clr);     //250
+//x_axis_nodes.add_point(251, 10.46194, 0.21140, 0.33958, x_axis_clr);     //251
+//x_axis_nodes.add_point(252, 6.80000, -0.23515, 0.32358, x_axis_clr);     //252
+//x_axis_nodes.add_point(253, 6.60000, -0.38039, -0.12372, x_axis_clr);     //253
+//x_axis_nodes.add_point(254, 7.79913, -0.23519, 0.32355, x_axis_clr);     //254
+//x_axis_nodes.add_point(255, 7.60000, -0.38039, -0.12369, x_axis_clr);     //255
+//x_axis_nodes.add_point(256, 7.30000, -0.23515, 0.32358, x_axis_clr);     //256
+//x_axis_nodes.add_point(257, 7.10000, -0.38039, -0.12370, x_axis_clr);     //257
+//x_axis_nodes.add_point(258, 7.20000, 0.38042, -0.12360, x_axis_clr);     //258
+//x_axis_nodes.add_point(259, 8.19780, 0.38021, -0.12426, x_axis_clr);     //259
+//x_axis_nodes.add_point(260, 7.69948, 0.38038, -0.12375, x_axis_clr);     //260
+//x_axis_nodes.add_point(261, 7.00000, 0.23509, 0.32362, x_axis_clr);     //261
+//x_axis_nodes.add_point(262, 7.50000, 0.23510, 0.32362, x_axis_clr);     //262
+//x_axis_nodes.add_point(263, 7.99808, 0.23531, 0.32347, x_axis_clr);     //263
+//x_axis_nodes.add_point(264, 8.09932, -0.38036, -0.12381, x_axis_clr);     //264
+//x_axis_nodes.add_point(265, 8.29661, -0.23546, 0.32335, x_axis_clr);     //265
+//x_axis_nodes.add_point(266, 8.49397, 0.23539, 0.32341, x_axis_clr);     //266
+//x_axis_nodes.add_point(267, 8.69409, 0.38001, -0.12487, x_axis_clr);     //267
+//x_axis_nodes.add_point(268, 6.70000, 0.38042, -0.12360, x_axis_clr);     //268
+//x_axis_nodes.add_point(269, 6.50000, 0.23509, 0.32362, x_axis_clr);     //269
+//x_axis_nodes.add_point(270, 6.30000, -0.23515, 0.32358, x_axis_clr);     //270
+//x_axis_nodes.add_point(271, 6.10000, -0.38038, -0.12373, x_axis_clr);     //271
+//x_axis_nodes.add_point(272, 0.90000, 0.38005, -0.12355, x_axis_clr);     //272
+//x_axis_nodes.add_point(273, 0.90000, 0.23504, 0.32346, x_axis_clr);     //273
+//x_axis_nodes.add_point(274, 0.90000, -0.23491, 0.32356, x_axis_clr);     //274
+//x_axis_nodes.add_point(275, 0.90000, -0.38018, -0.12324, x_axis_clr);     //275
+//x_axis_nodes.add_point(276, 0.90000, 0.00000, -0.40001, x_axis_clr);     //276
+//x_axis_nodes.add_point(277, 1.40000, 0.00000, -0.40000, x_axis_clr);     //277
+//x_axis_nodes.add_point(278, 1.90000, 0.00000, -0.40000, x_axis_clr);     //278
+//x_axis_nodes.add_point(279, 2.40000, 0.00000, -0.40000, x_axis_clr);     //279
+//x_axis_nodes.add_point(280, 2.90000, 0.00000, -0.40000, x_axis_clr);     //280
+//x_axis_nodes.add_point(281, 3.40000, 0.00000, -0.40000, x_axis_clr);     //281
+//x_axis_nodes.add_point(282, 3.90000, 0.00000, -0.40000, x_axis_clr);     //282
+//x_axis_nodes.add_point(283, 4.40000, 0.00000, -0.40000, x_axis_clr);     //283
+//x_axis_nodes.add_point(284, 4.90000, 0.00000, -0.40000, x_axis_clr);     //284
+//x_axis_nodes.add_point(285, 5.40000, 0.00000, -0.40000, x_axis_clr);     //285
+//x_axis_nodes.add_point(286, 5.90000, 0.00000, -0.40000, x_axis_clr);     //286
+//x_axis_nodes.add_point(287, 6.40000, 0.00000, -0.40000, x_axis_clr);     //287
+//x_axis_nodes.add_point(288, 6.90000, 0.00000, -0.40000, x_axis_clr);     //288
+//x_axis_nodes.add_point(289, 7.40000, 0.00000, -0.40000, x_axis_clr);     //289
+//x_axis_nodes.add_point(290, 7.90000, 0.00000, -0.40000, x_axis_clr);     //290
+//x_axis_nodes.add_point(291, 8.40000, 0.00000, -0.40000, x_axis_clr);     //291
+//x_axis_nodes.add_point(292, 8.90000, 0.00000, -0.40000, x_axis_clr);     //292
+//x_axis_nodes.add_point(293, 9.40000, 0.00000, -0.40000, x_axis_clr);     //293
+//x_axis_nodes.add_point(294, 9.90000, 0.00000, -0.40000, x_axis_clr);     //294
+//x_axis_nodes.add_point(295, 10.40000, 0.00000, -0.40000, x_axis_clr);     //295
+//x_axis_nodes.add_point(296, 10.90000, -0.38042, -0.12361, x_axis_clr);     //296
+//x_axis_nodes.add_point(297, 10.90000, -0.23511, 0.32361, x_axis_clr);     //297
+//x_axis_nodes.add_point(298, 10.90000, 0.23511, 0.32361, x_axis_clr);     //298
+//x_axis_nodes.add_point(299, 10.90000, 0.38042, -0.12361, x_axis_clr);     //299
+//x_axis_nodes.add_point(300, 10.90000, 0.00000, -0.40000, x_axis_clr);     //300
+
+//x_axis_tris = new tri_elements();
+//x_axis_tris.add_triangle(148, 99, 153, 77);     //148
+//x_axis_tris.add_triangle(149, 136, 77, 153);     //149
+//x_axis_tris.add_triangle(150, 150, 149, 147);     //150
+//x_axis_tris.add_triangle(151, 158, 150, 146);     //151
+//x_axis_tris.add_triangle(152, 146, 147, 190);     //152
+//x_axis_tris.add_triangle(153, 159, 146, 189);     //153
+//x_axis_tris.add_triangle(154, 145, 147, 149);     //154
+//x_axis_tris.add_triangle(155, 191, 190, 147);     //155
+//x_axis_tris.add_triangle(156, 144, 148, 161);     //156
+//x_axis_tris.add_triangle(157, 144, 160, 193);     //157
+//x_axis_tris.add_triangle(158, 145, 144, 192);     //158
+//x_axis_tris.add_triangle(159, 143, 156, 155);     //159
+//x_axis_tris.add_triangle(160, 142, 157, 156);     //160
+//x_axis_tris.add_triangle(161, 150, 158, 157);     //161
+//x_axis_tris.add_triangle(162, 141, 151, 164);     //162
+//x_axis_tris.add_triangle(163, 140, 152, 151);     //163
+//x_axis_tris.add_triangle(164, 148, 139, 162);     //164
+//x_axis_tris.add_triangle(165, 139, 141, 163);     //165
+//x_axis_tris.add_triangle(166, 149, 150, 142);     //166
+//x_axis_tris.add_triangle(167, 148, 149, 138);     //167
+//x_axis_tris.add_triangle(168, 138, 142, 143);     //168
+//x_axis_tris.add_triangle(169, 139, 138, 140);     //169
+//x_axis_tris.add_triangle(170, 136, 154, 77);     //170
+//x_axis_tris.add_triangle(171, 152, 155, 154);     //171
+//x_axis_tris.add_triangle(172, 135, 137, 166);     //172
+//x_axis_tris.add_triangle(173, 151, 135, 165);     //173
+//x_axis_tris.add_triangle(174, 136, 135, 151);     //174
+//x_axis_tris.add_triangle(175, 137, 153, 134);     //175
+//x_axis_tris.add_triangle(176, 167, 166, 137);     //176
+//x_axis_tris.add_triangle(177, 133, 168, 134);     //177
+//x_axis_tris.add_triangle(178, 133, 169, 178);     //178
+//x_axis_tris.add_triangle(179, 121, 126, 125);     //179
+//x_axis_tris.add_triangle(180, 187, 186, 126);     //180
+//x_axis_tris.add_triangle(181, 159, 121, 122);     //181
+//x_axis_tris.add_triangle(182, 188, 187, 121);     //182
+//x_axis_tris.add_triangle(183, 122, 125, 124);     //183
+//x_axis_tris.add_triangle(184, 158, 122, 120);     //184
+//x_axis_tris.add_triangle(185, 119, 123, 128);     //185
+//x_axis_tris.add_triangle(186, 120, 124, 123);     //186
+//x_axis_tris.add_triangle(187, 156, 119, 127);     //187
+//x_axis_tris.add_triangle(188, 157, 120, 119);     //188
+//x_axis_tris.add_triangle(189, 115, 126, 186);     //189
+//x_axis_tris.add_triangle(190, 116, 125, 126);     //190
+//x_axis_tris.add_triangle(191, 114, 115, 185);     //191
+//x_axis_tris.add_triangle(192, 117, 116, 115);     //192
+//x_axis_tris.add_triangle(193, 113, 184, 193);     //193
+//x_axis_tris.add_triangle(194, 113, 160, 161);     //194
+//x_axis_tris.add_triangle(195, 114, 113, 118);     //195
+//x_axis_tris.add_triangle(196, 116, 117, 112);     //196
+//x_axis_tris.add_triangle(197, 125, 116, 110);     //197
+//x_axis_tris.add_triangle(198, 109, 111, 130);     //198
+//x_axis_tris.add_triangle(199, 110, 112, 111);     //199
+//x_axis_tris.add_triangle(200, 123, 109, 129);     //200
+//x_axis_tris.add_triangle(201, 124, 110, 109);     //201
+//x_axis_tris.add_triangle(202, 118, 161, 162);     //202
+//x_axis_tris.add_triangle(203, 117, 118, 108);     //203
+//x_axis_tris.add_triangle(204, 107, 111, 112);     //204
+//x_axis_tris.add_triangle(205, 131, 130, 111);     //205
+//x_axis_tris.add_triangle(206, 106, 108, 162);     //206
+//x_axis_tris.add_triangle(207, 106, 163, 164);     //207
+//x_axis_tris.add_triangle(208, 107, 106, 132);     //208
+//x_axis_tris.add_triangle(209, 101, 105, 104);     //209
+//x_axis_tris.add_triangle(210, 128, 129, 105);     //210
+//x_axis_tris.add_triangle(211, 102, 77, 100);     //211
+//x_axis_tris.add_triangle(212, 100, 154, 155);     //212
+//x_axis_tris.add_triangle(213, 101, 100, 127);     //213
+//x_axis_tris.add_triangle(214, 102, 104, 103);     //214
+//x_axis_tris.add_triangle(215, 77, 102, 99);     //215
+//x_axis_tris.add_triangle(216, 99, 103, 98);     //216
+//x_axis_tris.add_triangle(217, 134, 99, 98);     //217
+//x_axis_tris.add_triangle(218, 133, 170, 169);     //218
+//x_axis_tris.add_triangle(219, 130, 131, 92);     //219
+//x_axis_tris.add_triangle(220, 129, 130, 91);     //220
+//x_axis_tris.add_triangle(221, 91, 92, 94);     //221
+//x_axis_tris.add_triangle(222, 105, 91, 94);     //222
+//x_axis_tris.add_triangle(223, 90, 92, 131);     //223
+//x_axis_tris.add_triangle(224, 95, 94, 92);     //224
+//x_axis_tris.add_triangle(225, 89, 132, 164);     //225
+//x_axis_tris.add_triangle(226, 166, 89, 165);     //226
+//x_axis_tris.add_triangle(227, 96, 90, 89);     //227
+//x_axis_tris.add_triangle(228, 88, 86, 93);     //228
+//x_axis_tris.add_triangle(229, 104, 93, 86);     //229
+//x_axis_tris.add_triangle(230, 86, 88, 87);     //230
+//x_axis_tris.add_triangle(231, 103, 86, 87);     //231
+//x_axis_tris.add_triangle(232, 133, 171, 170);     //232
+//x_axis_tris.add_triangle(233, 84, 88, 95);     //233
+//x_axis_tris.add_triangle(234, 80, 87, 84);     //234
+//x_axis_tris.add_triangle(235, 85, 83, 171);     //235
+//x_axis_tris.add_triangle(236, 167, 97, 166);     //236
+//x_axis_tris.add_triangle(237, 96, 97, 81);     //237
+//x_axis_tris.add_triangle(238, 80, 83, 87);     //238
+//x_axis_tris.add_triangle(239, 173, 172, 83);     //239
+//x_axis_tris.add_triangle(240, 79, 80, 84);     //240
+//x_axis_tris.add_triangle(241, 174, 173, 83);     //241
+//x_axis_tris.add_triangle(242, 82, 167, 168);     //242
+//x_axis_tris.add_triangle(243, 178, 78, 168);     //243
+//x_axis_tris.add_triangle(244, 176, 80, 78);     //244
+//x_axis_tris.add_triangle(245, 175, 174, 83);     //245
+//x_axis_tris.add_triangle(246, 176, 175, 80);     //246
+//x_axis_tris.add_triangle(247, 177, 176, 78);     //247
+//x_axis_tris.add_triangle(248, 178, 177, 78);     //248
+//x_axis_tris.add_triangle(249, 168, 79, 82);     //249
+//x_axis_tris.add_triangle(250, 168, 78, 79);     //250
+//x_axis_tris.add_triangle(251, 80, 79, 78);     //251
+//x_axis_tris.add_triangle(252, 81, 82, 79);     //252
+//x_axis_tris.add_triangle(253, 83, 80, 175);     //253
+//x_axis_tris.add_triangle(254, 84, 81, 79);     //254
+//x_axis_tris.add_triangle(255, 81, 84, 95);     //255
+//x_axis_tris.add_triangle(256, 82, 81, 97);     //256
+//x_axis_tris.add_triangle(257, 167, 82, 97);     //257
+//x_axis_tris.add_triangle(258, 171, 83, 172);     //258
+//x_axis_tris.add_triangle(259, 88, 84, 87);     //259
+//x_axis_tris.add_triangle(260, 95, 96, 81);     //260
+//x_axis_tris.add_triangle(261, 85, 87, 83);     //261
+//x_axis_tris.add_triangle(262, 98, 85, 171);     //262
+//x_axis_tris.add_triangle(263, 85, 98, 103);     //263
+//x_axis_tris.add_triangle(264, 87, 85, 103);     //264
+//x_axis_tris.add_triangle(265, 86, 103, 104);     //265
+//x_axis_tris.add_triangle(266, 94, 95, 88);     //266
+//x_axis_tris.add_triangle(267, 93, 94, 88);     //267
+//x_axis_tris.add_triangle(268, 96, 95, 92);     //268
+//x_axis_tris.add_triangle(269, 97, 96, 89);     //269
+//x_axis_tris.add_triangle(270, 166, 97, 89);     //270
+//x_axis_tris.add_triangle(271, 89, 90, 132);     //271
+//x_axis_tris.add_triangle(272, 165, 89, 164);     //272
+//x_axis_tris.add_triangle(273, 92, 90, 96);     //273
+//x_axis_tris.add_triangle(274, 131, 132, 90);     //274
+//x_axis_tris.add_triangle(275, 93, 104, 105);     //275
+//x_axis_tris.add_triangle(276, 94, 93, 105);     //276
+//x_axis_tris.add_triangle(277, 91, 105, 129);     //277
+//x_axis_tris.add_triangle(278, 92, 91, 130);     //278
+//x_axis_tris.add_triangle(279, 133, 98, 171);     //279
+//x_axis_tris.add_triangle(280, 99, 134, 153);     //280
+//x_axis_tris.add_triangle(281, 103, 99, 102);     //281
+//x_axis_tris.add_triangle(282, 127, 128, 101);     //282
+//x_axis_tris.add_triangle(283, 155, 127, 100);     //283
+//x_axis_tris.add_triangle(284, 100, 101, 102);     //284
+//x_axis_tris.add_triangle(285, 154, 100, 77);     //285
+//x_axis_tris.add_triangle(286, 105, 101, 128);     //286
+//x_axis_tris.add_triangle(287, 104, 102, 101);     //287
+//x_axis_tris.add_triangle(288, 132, 131, 107);     //288
+//x_axis_tris.add_triangle(289, 164, 132, 106);     //289
+//x_axis_tris.add_triangle(290, 106, 107, 108);     //290
+//x_axis_tris.add_triangle(291, 163, 106, 162);     //291
+//x_axis_tris.add_triangle(292, 111, 107, 131);     //292
+//x_axis_tris.add_triangle(293, 112, 108, 107);     //293
+//x_axis_tris.add_triangle(294, 108, 112, 117);     //294
+//x_axis_tris.add_triangle(295, 162, 108, 118);     //295
+//x_axis_tris.add_triangle(296, 109, 123, 124);     //296
+//x_axis_tris.add_triangle(297, 129, 128, 123);     //297
+//x_axis_tris.add_triangle(298, 111, 109, 110);     //298
+//x_axis_tris.add_triangle(299, 130, 129, 109);     //299
+//x_axis_tris.add_triangle(300, 110, 124, 125);     //300
+//x_axis_tris.add_triangle(301, 112, 110, 116);     //301
+//x_axis_tris.add_triangle(302, 118, 117, 114);     //302
+//x_axis_tris.add_triangle(303, 161, 118, 113);     //303
+//x_axis_tris.add_triangle(304, 113, 114, 184);     //304
+//x_axis_tris.add_triangle(305, 160, 113, 193);     //305
+//x_axis_tris.add_triangle(306, 115, 114, 117);     //306
+//x_axis_tris.add_triangle(307, 185, 184, 114);     //307
+//x_axis_tris.add_triangle(308, 126, 115, 116);     //308
+//x_axis_tris.add_triangle(309, 186, 185, 115);     //309
+//x_axis_tris.add_triangle(310, 119, 156, 157);     //310
+//x_axis_tris.add_triangle(311, 127, 155, 156);     //311
+//x_axis_tris.add_triangle(312, 123, 119, 120);     //312
+//x_axis_tris.add_triangle(313, 128, 127, 119);     //313
+//x_axis_tris.add_triangle(314, 120, 157, 158);     //314
+//x_axis_tris.add_triangle(315, 124, 120, 122);     //315
+//x_axis_tris.add_triangle(316, 121, 159, 188);     //316
+//x_axis_tris.add_triangle(317, 122, 158, 159);     //317
+//x_axis_tris.add_triangle(318, 126, 121, 187);     //318
+//x_axis_tris.add_triangle(319, 125, 122, 121);     //319
+//x_axis_tris.add_triangle(320, 133, 134, 98);     //320
+//x_axis_tris.add_triangle(321, 168, 133, 178);     //321
+//x_axis_tris.add_triangle(322, 134, 168, 167);     //322
+//x_axis_tris.add_triangle(323, 134, 167, 137);     //323
+//x_axis_tris.add_triangle(324, 151, 152, 136);     //324
+//x_axis_tris.add_triangle(325, 164, 151, 165);     //325
+//x_axis_tris.add_triangle(326, 135, 153, 137);     //326
+//x_axis_tris.add_triangle(327, 165, 135, 166);     //327
+//x_axis_tris.add_triangle(328, 154, 136, 152);     //328
+//x_axis_tris.add_triangle(329, 153, 135, 136);     //329
+//x_axis_tris.add_triangle(330, 140, 141, 139);     //330
+//x_axis_tris.add_triangle(331, 143, 140, 138);     //331
+//x_axis_tris.add_triangle(332, 138, 139, 148);     //332
+//x_axis_tris.add_triangle(333, 142, 138, 149);     //333
+//x_axis_tris.add_triangle(334, 162, 139, 163);     //334
+//x_axis_tris.add_triangle(335, 161, 148, 162);     //335
+//x_axis_tris.add_triangle(336, 140, 143, 152);     //336
+//x_axis_tris.add_triangle(337, 141, 140, 151);     //337
+//x_axis_tris.add_triangle(338, 163, 141, 164);     //338
+//x_axis_tris.add_triangle(339, 157, 142, 150);     //339
+//x_axis_tris.add_triangle(340, 156, 143, 142);     //340
+//x_axis_tris.add_triangle(341, 155, 152, 143);     //341
+//x_axis_tris.add_triangle(342, 192, 191, 145);     //342
+//x_axis_tris.add_triangle(343, 193, 192, 144);     //343
+//x_axis_tris.add_triangle(344, 144, 145, 148);     //344
+//x_axis_tris.add_triangle(345, 160, 144, 161);     //345
+//x_axis_tris.add_triangle(346, 147, 145, 191);     //346
+//x_axis_tris.add_triangle(347, 149, 148, 145);     //347
+//x_axis_tris.add_triangle(348, 189, 188, 159);     //348
+//x_axis_tris.add_triangle(349, 190, 189, 146);     //349
+//x_axis_tris.add_triangle(350, 146, 159, 158);     //350
+//x_axis_tris.add_triangle(351, 147, 146, 150);     //351
+//x_axis_tris.add_triangle(352, 192, 179, 183);     //352
+//x_axis_tris.add_triangle(353, 191, 179, 192);     //353
+//x_axis_tris.add_triangle(354, 191, 190, 179);     //354
+//x_axis_tris.add_triangle(355, 190, 180, 179);     //355
+//x_axis_tris.add_triangle(356, 190, 189, 180);     //356
+//x_axis_tris.add_triangle(357, 189, 188, 180);     //357
+//x_axis_tris.add_triangle(358, 188, 181, 180);     //358
+//x_axis_tris.add_triangle(359, 188, 187, 181);     //359
+//x_axis_tris.add_triangle(360, 187, 186, 181);     //360
+//x_axis_tris.add_triangle(361, 186, 182, 181);     //361
+//x_axis_tris.add_triangle(362, 186, 185, 182);     //362
+//x_axis_tris.add_triangle(363, 183, 193, 192);     //363
+//x_axis_tris.add_triangle(364, 185, 184, 182);     //364
+//x_axis_tris.add_triangle(365, 184, 183, 182);     //365
+//x_axis_tris.add_triangle(366, 184, 193, 183);     //366
+//x_axis_tris.add_triangle(367, 260, 259, 263);     //367
+//x_axis_tris.add_triangle(368, 259, 267, 266);     //368
+//x_axis_tris.add_triangle(369, 290, 291, 259);     //369
+//x_axis_tris.add_triangle(370, 291, 292, 267);     //370
+//x_axis_tris.add_triangle(371, 268, 258, 261);     //371
+//x_axis_tris.add_triangle(372, 258, 260, 262);     //372
+//x_axis_tris.add_triangle(373, 288, 289, 258);     //373
+//x_axis_tris.add_triangle(374, 289, 290, 260);     //374
+//x_axis_tris.add_triangle(375, 257, 255, 289);     //375
+//x_axis_tris.add_triangle(376, 255, 264, 290);     //376
+//x_axis_tris.add_triangle(377, 254, 256, 262);     //377
+//x_axis_tris.add_triangle(378, 255, 257, 256);     //378
+//x_axis_tris.add_triangle(379, 265, 254, 263);     //379
+//x_axis_tris.add_triangle(380, 264, 255, 254);     //380
+//x_axis_tris.add_triangle(381, 271, 253, 287);     //381
+//x_axis_tris.add_triangle(382, 253, 257, 288);     //382
+//x_axis_tris.add_triangle(383, 252, 270, 269);     //383
+//x_axis_tris.add_triangle(384, 253, 271, 270);     //384
+//x_axis_tris.add_triangle(385, 256, 252, 261);     //385
+//x_axis_tris.add_triangle(386, 257, 253, 252);     //386
+//x_axis_tris.add_triangle(387, 247, 246, 293);     //387
+//x_axis_tris.add_triangle(388, 246, 267, 292);     //388
+//x_axis_tris.add_triangle(389, 249, 248, 246);     //389
+//x_axis_tris.add_triangle(390, 248, 266, 267);     //390
+//x_axis_tris.add_triangle(391, 245, 247, 294);     //391
+//x_axis_tris.add_triangle(392, 250, 249, 247);     //392
+//x_axis_tris.add_triangle(393, 244, 295, 300);     //393
+//x_axis_tris.add_triangle(394, 298, 251, 244);     //394
+//x_axis_tris.add_triangle(395, 251, 250, 245);     //395
+//x_axis_tris.add_triangle(396, 241, 248, 249);     //396
+//x_axis_tris.add_triangle(397, 240, 265, 266);     //397
+//x_axis_tris.add_triangle(398, 238, 264, 265);     //398
+//x_axis_tris.add_triangle(399, 292, 238, 239);     //399
+//x_axis_tris.add_triangle(400, 291, 290, 264);     //400
+//x_axis_tris.add_triangle(401, 237, 241, 243);     //401
+//x_axis_tris.add_triangle(402, 239, 240, 241);     //402
+//x_axis_tris.add_triangle(403, 294, 237, 242);     //403
+//x_axis_tris.add_triangle(404, 293, 239, 237);     //404
+//x_axis_tris.add_triangle(405, 251, 298, 297);     //405
+//x_axis_tris.add_triangle(406, 243, 249, 250);     //406
+//x_axis_tris.add_triangle(407, 235, 236, 297);     //407
+//x_axis_tris.add_triangle(408, 242, 243, 236);     //408
+//x_axis_tris.add_triangle(409, 235, 296, 300);     //409
+//x_axis_tris.add_triangle(410, 226, 225, 230);     //410
+//x_axis_tris.add_triangle(411, 225, 234, 233);     //411
+//x_axis_tris.add_triangle(412, 283, 282, 225);     //412
+//x_axis_tris.add_triangle(413, 282, 281, 234);     //413
+//x_axis_tris.add_triangle(414, 224, 226, 229);     //414
+//x_axis_tris.add_triangle(415, 284, 283, 226);     //415
+//x_axis_tris.add_triangle(416, 271, 223, 227);     //416
+//x_axis_tris.add_triangle(417, 223, 224, 228);     //417
+//x_axis_tris.add_triangle(418, 286, 285, 223);     //418
+//x_axis_tris.add_triangle(419, 285, 284, 224);     //419
+//x_axis_tris.add_triangle(420, 222, 220, 284);     //420
+//x_axis_tris.add_triangle(421, 220, 231, 283);     //421
+//x_axis_tris.add_triangle(422, 219, 221, 229);     //422
+//x_axis_tris.add_triangle(423, 220, 222, 221);     //423
+//x_axis_tris.add_triangle(424, 232, 219, 230);     //424
+//x_axis_tris.add_triangle(425, 231, 220, 219);     //425
+//x_axis_tris.add_triangle(426, 268, 218, 287);     //426
+//x_axis_tris.add_triangle(427, 218, 217, 286);     //427
+//x_axis_tris.add_triangle(428, 217, 222, 285);     //428
+//x_axis_tris.add_triangle(429, 216, 269, 270);     //429
+//x_axis_tris.add_triangle(430, 218, 268, 269);     //430
+//x_axis_tris.add_triangle(431, 221, 215, 228);     //431
+//x_axis_tris.add_triangle(432, 215, 216, 227);     //432
+//x_axis_tris.add_triangle(433, 222, 217, 215);     //433
+//x_axis_tris.add_triangle(434, 217, 218, 216);     //434
+//x_axis_tris.add_triangle(435, 209, 214, 213);     //435
+//x_axis_tris.add_triangle(436, 280, 279, 214);     //436
+//x_axis_tris.add_triangle(437, 234, 209, 210);     //437
+//x_axis_tris.add_triangle(438, 281, 280, 209);     //438
+//x_axis_tris.add_triangle(439, 212, 208, 210);     //439
+//x_axis_tris.add_triangle(440, 208, 232, 233);     //440
+//x_axis_tris.add_triangle(441, 207, 211, 281);     //441
+//x_axis_tris.add_triangle(442, 208, 212, 211);     //442
+//x_axis_tris.add_triangle(443, 231, 207, 282);     //443
+//x_axis_tris.add_triangle(444, 232, 208, 207);     //444
+//x_axis_tris.add_triangle(445, 202, 214, 279);     //445
+//x_axis_tris.add_triangle(446, 205, 202, 203);     //446
+//x_axis_tris.add_triangle(447, 204, 213, 214);     //447
+//x_axis_tris.add_triangle(448, 201, 277, 276);     //448
+//x_axis_tris.add_triangle(449, 203, 278, 277);     //449
+//x_axis_tris.add_triangle(450, 201, 275, 274);     //450
+//x_axis_tris.add_triangle(451, 200, 198, 204);     //451
+//x_axis_tris.add_triangle(452, 198, 212, 213);     //452
+//x_axis_tris.add_triangle(453, 197, 199, 279);     //453
+//x_axis_tris.add_triangle(454, 198, 200, 199);     //454
+//x_axis_tris.add_triangle(455, 211, 197, 280);     //455
+//x_axis_tris.add_triangle(456, 212, 198, 197);     //456
+//x_axis_tris.add_triangle(457, 273, 196, 206);     //457
+//x_axis_tris.add_triangle(458, 196, 200, 205);     //458
+//x_axis_tris.add_triangle(459, 195, 199, 200);     //459
+//x_axis_tris.add_triangle(460, 278, 279, 199);     //460
+//x_axis_tris.add_triangle(461, 194, 196, 273);     //461
+//x_axis_tris.add_triangle(462, 276, 277, 194);     //462
+//x_axis_tris.add_triangle(463, 277, 278, 195);     //463
+//x_axis_tris.add_triangle(464, 194, 277, 195);     //464
+//x_axis_tris.add_triangle(465, 272, 276, 194);     //465
+//x_axis_tris.add_triangle(466, 194, 195, 196);     //466
+//x_axis_tris.add_triangle(467, 272, 194, 273);     //467
+//x_axis_tris.add_triangle(468, 195, 278, 199);     //468
+//x_axis_tris.add_triangle(469, 196, 195, 200);     //469
+//x_axis_tris.add_triangle(470, 206, 196, 205);     //470
+//x_axis_tris.add_triangle(471, 274, 273, 206);     //471
+//x_axis_tris.add_triangle(472, 211, 212, 197);     //472
+//x_axis_tris.add_triangle(473, 281, 211, 280);     //473
+//x_axis_tris.add_triangle(474, 197, 198, 199);     //474
+//x_axis_tris.add_triangle(475, 280, 197, 279);     //475
+//x_axis_tris.add_triangle(476, 204, 198, 213);     //476
+//x_axis_tris.add_triangle(477, 205, 200, 204);     //477
+//x_axis_tris.add_triangle(478, 203, 201, 206);     //478
+//x_axis_tris.add_triangle(479, 206, 201, 274);     //479
+//x_axis_tris.add_triangle(480, 277, 201, 203);     //480
+//x_axis_tris.add_triangle(481, 276, 275, 201);     //481
+//x_axis_tris.add_triangle(482, 205, 204, 202);     //482
+//x_axis_tris.add_triangle(483, 202, 204, 214);     //483
+//x_axis_tris.add_triangle(484, 203, 206, 205);     //484
+//x_axis_tris.add_triangle(485, 203, 202, 278);     //485
+//x_axis_tris.add_triangle(486, 278, 202, 279);     //486
+//x_axis_tris.add_triangle(487, 231, 232, 207);     //487
+//x_axis_tris.add_triangle(488, 283, 231, 282);     //488
+//x_axis_tris.add_triangle(489, 207, 208, 211);     //489
+//x_axis_tris.add_triangle(490, 282, 207, 281);     //490
+//x_axis_tris.add_triangle(491, 210, 208, 233);     //491
+//x_axis_tris.add_triangle(492, 213, 212, 210);     //492
+//x_axis_tris.add_triangle(493, 234, 281, 209);     //493
+//x_axis_tris.add_triangle(494, 233, 234, 210);     //494
+//x_axis_tris.add_triangle(495, 209, 280, 214);     //495
+//x_axis_tris.add_triangle(496, 210, 209, 213);     //496
+//x_axis_tris.add_triangle(497, 215, 217, 216);     //497
+//x_axis_tris.add_triangle(498, 221, 222, 215);     //498
+//x_axis_tris.add_triangle(499, 228, 215, 227);     //499
+//x_axis_tris.add_triangle(500, 229, 221, 228);     //500
+//x_axis_tris.add_triangle(501, 216, 218, 269);     //501
+//x_axis_tris.add_triangle(502, 227, 216, 270);     //502
+//x_axis_tris.add_triangle(503, 286, 217, 285);     //503
+//x_axis_tris.add_triangle(504, 287, 218, 286);     //504
+//x_axis_tris.add_triangle(505, 288, 268, 287);     //505
+//x_axis_tris.add_triangle(506, 232, 231, 219);     //506
+//x_axis_tris.add_triangle(507, 233, 232, 230);     //507
+//x_axis_tris.add_triangle(508, 219, 220, 221);     //508
+//x_axis_tris.add_triangle(509, 230, 219, 229);     //509
+//x_axis_tris.add_triangle(510, 284, 220, 283);     //510
+//x_axis_tris.add_triangle(511, 285, 222, 284);     //511
+//x_axis_tris.add_triangle(512, 223, 285, 224);     //512
+//x_axis_tris.add_triangle(513, 271, 286, 223);     //513
+//x_axis_tris.add_triangle(514, 227, 223, 228);     //514
+//x_axis_tris.add_triangle(515, 270, 271, 227);     //515
+//x_axis_tris.add_triangle(516, 224, 284, 226);     //516
+//x_axis_tris.add_triangle(517, 228, 224, 229);     //517
+//x_axis_tris.add_triangle(518, 225, 282, 234);     //518
+//x_axis_tris.add_triangle(519, 226, 283, 225);     //519
+//x_axis_tris.add_triangle(520, 230, 225, 233);     //520
+//x_axis_tris.add_triangle(521, 229, 226, 230);     //521
+//x_axis_tris.add_triangle(522, 242, 235, 295);     //522
+//x_axis_tris.add_triangle(523, 295, 235, 300);     //523
+//x_axis_tris.add_triangle(524, 236, 235, 242);     //524
+//x_axis_tris.add_triangle(525, 297, 296, 235);     //525
+//x_axis_tris.add_triangle(526, 250, 236, 243);     //526
+//x_axis_tris.add_triangle(527, 250, 251, 236);     //527
+//x_axis_tris.add_triangle(528, 236, 251, 297);     //528
+//x_axis_tris.add_triangle(529, 237, 294, 293);     //529
+//x_axis_tris.add_triangle(530, 242, 295, 294);     //530
+//x_axis_tris.add_triangle(531, 241, 237, 239);     //531
+//x_axis_tris.add_triangle(532, 243, 242, 237);     //532
+//x_axis_tris.add_triangle(533, 292, 291, 238);     //533
+//x_axis_tris.add_triangle(534, 238, 291, 264);     //534
+//x_axis_tris.add_triangle(535, 239, 293, 292);     //535
+//x_axis_tris.add_triangle(536, 239, 238, 240);     //536
+//x_axis_tris.add_triangle(537, 240, 238, 265);     //537
+//x_axis_tris.add_triangle(538, 241, 240, 248);     //538
+//x_axis_tris.add_triangle(539, 248, 240, 266);     //539
+//x_axis_tris.add_triangle(540, 249, 243, 241);     //540
+//x_axis_tris.add_triangle(541, 244, 251, 245);     //541
+//x_axis_tris.add_triangle(542, 299, 298, 244);     //542
+//x_axis_tris.add_triangle(543, 244, 245, 295);     //543
+//x_axis_tris.add_triangle(544, 299, 244, 300);     //544
+//x_axis_tris.add_triangle(545, 245, 250, 247);     //545
+//x_axis_tris.add_triangle(546, 295, 245, 294);     //546
+//x_axis_tris.add_triangle(547, 246, 248, 267);     //547
+//x_axis_tris.add_triangle(548, 247, 249, 246);     //548
+//x_axis_tris.add_triangle(549, 293, 246, 292);     //549
+//x_axis_tris.add_triangle(550, 294, 247, 293);     //550
+//x_axis_tris.add_triangle(551, 256, 257, 252);     //551
+//x_axis_tris.add_triangle(552, 262, 256, 261);     //552
+//x_axis_tris.add_triangle(553, 252, 253, 270);     //553
+//x_axis_tris.add_triangle(554, 261, 252, 269);     //554
+//x_axis_tris.add_triangle(555, 287, 253, 288);     //555
+//x_axis_tris.add_triangle(556, 286, 271, 287);     //556
+//x_axis_tris.add_triangle(557, 265, 264, 254);     //557
+//x_axis_tris.add_triangle(558, 266, 265, 263);     //558
+//x_axis_tris.add_triangle(559, 254, 255, 256);     //559
+//x_axis_tris.add_triangle(560, 263, 254, 262);     //560
+//x_axis_tris.add_triangle(561, 289, 255, 290);     //561
+//x_axis_tris.add_triangle(562, 288, 257, 289);     //562
+//x_axis_tris.add_triangle(563, 258, 289, 260);     //563
+//x_axis_tris.add_triangle(564, 268, 288, 258);     //564
+//x_axis_tris.add_triangle(565, 261, 258, 262);     //565
+//x_axis_tris.add_triangle(566, 269, 268, 261);     //566
+//x_axis_tris.add_triangle(567, 259, 291, 267);     //567
+//x_axis_tris.add_triangle(568, 260, 290, 259);     //568
+//x_axis_tris.add_triangle(569, 263, 259, 266);     //569
+//x_axis_tris.add_triangle(570, 262, 260, 263);     //570
+//                                                  //_________________________________________________________________
+
+//// Y axis
+//y_axis_nodes = new nodes_store();
+//y_axis_nodes.add_point(301, -0.00822, 12.73585, -0.31033, y_axis_clr);     //301
+//y_axis_nodes.add_point(302, 0.06964, 13.51016, 0.07719, y_axis_clr);     //302
+//y_axis_nodes.add_point(303, 0.07180, 13.29293, 0.14509, y_axis_clr);     //303
+//y_axis_nodes.add_point(304, -0.04389, 13.44256, 0.11381, y_axis_clr);     //304
+//y_axis_nodes.add_point(305, 0.09254, 13.03628, 0.21092, y_axis_clr);     //305
+//y_axis_nodes.add_point(306, 0.16998, 13.14450, 0.10814, y_axis_clr);     //306
+//y_axis_nodes.add_point(307, -0.09521, 13.53924, 0.01375, y_axis_clr);     //307
+//y_axis_nodes.add_point(308, -0.06443, 13.16987, 0.18373, y_axis_clr);     //308
+//y_axis_nodes.add_point(309, -0.11107, 13.38273, -0.08179, y_axis_clr);     //309
+//y_axis_nodes.add_point(310, -0.23015, 13.03667, -0.00583, y_axis_clr);     //310
+//y_axis_nodes.add_point(311, -0.16638, 13.25976, 0.03831, y_axis_clr);     //311
+//y_axis_nodes.add_point(312, -0.18831, 13.01161, 0.14375, y_axis_clr);     //312
+//y_axis_nodes.add_point(313, 0.30557, 12.58845, 0.17014, y_axis_clr);     //313
+//y_axis_nodes.add_point(314, 0.16644, 12.51540, 0.32958, y_axis_clr);     //314
+//y_axis_nodes.add_point(315, -0.25513, 12.52287, 0.26414, y_axis_clr);     //315
+//y_axis_nodes.add_point(316, -0.05312, 12.58998, 0.34528, y_axis_clr);     //316
+//y_axis_nodes.add_point(317, -0.27015, 12.85133, 0.07227, y_axis_clr);     //317
+//y_axis_nodes.add_point(318, -0.21337, 12.75697, 0.21768, y_axis_clr);     //318
+//y_axis_nodes.add_point(319, -0.05518, 12.89675, 0.26178, y_axis_clr);     //319
+//y_axis_nodes.add_point(320, 0.12934, 12.76128, 0.27474, y_axis_clr);     //320
+//y_axis_nodes.add_point(321, 0.22732, 12.90114, 0.13883, y_axis_clr);     //321
+//y_axis_nodes.add_point(322, -0.00665, 13.30986, -0.15723, y_axis_clr);     //322
+//y_axis_nodes.add_point(323, -0.00951, 13.00882, -0.23746, y_axis_clr);     //323
+//y_axis_nodes.add_point(324, -0.16769, 12.55109, -0.31823, y_axis_clr);     //324
+//y_axis_nodes.add_point(325, -0.31321, 12.57058, -0.16606, y_axis_clr);     //325
+//y_axis_nodes.add_point(326, -0.16912, 12.81652, -0.23426, y_axis_clr);     //326
+//y_axis_nodes.add_point(327, -0.15608, 13.10968, -0.14162, y_axis_clr);     //327
+//y_axis_nodes.add_point(328, -0.27072, 12.83670, -0.08433, y_axis_clr);     //328
+//y_axis_nodes.add_point(329, -0.34168, 12.59297, 0.06882, y_axis_clr);     //329
+//y_axis_nodes.add_point(330, 0.45703, 12.02109, 0.20534, y_axis_clr);     //330
+//y_axis_nodes.add_point(331, 0.24276, 12.03077, 0.43536, y_axis_clr);     //331
+//y_axis_nodes.add_point(332, 0.40779, 11.75835, 0.39983, y_axis_clr);     //332
+//y_axis_nodes.add_point(333, -0.33686, 12.03191, 0.36699, y_axis_clr);     //333
+//y_axis_nodes.add_point(334, -0.25933, 11.76118, 0.50799, y_axis_clr);     //334
+//y_axis_nodes.add_point(335, -0.05969, 12.03200, 0.49454, y_axis_clr);     //335
+//y_axis_nodes.add_point(336, 0.08570, 11.76140, 0.56382, y_axis_clr);     //336
+//y_axis_nodes.add_point(337, 0.67741, 11.19405, 0.24861, y_axis_clr);     //337
+//y_axis_nodes.add_point(338, 0.43550, 11.20456, 0.57183, y_axis_clr);     //338
+//y_axis_nodes.add_point(339, 0.02812, 11.20728, 0.71751, y_axis_clr);     //339
+//y_axis_nodes.add_point(340, -0.13903, 11.48850, 0.62786, y_axis_clr);     //340
+//y_axis_nodes.add_point(341, 0.25111, 11.48753, 0.59229, y_axis_clr);     //341
+//y_axis_nodes.add_point(342, 0.55089, 11.47922, 0.33651, y_axis_clr);     //342
+//y_axis_nodes.add_point(343, -0.45485, 12.03228, -0.20292, y_axis_clr);     //343
+//y_axis_nodes.add_point(344, -0.56383, 11.76221, -0.08415, y_axis_clr);     //344
+//y_axis_nodes.add_point(345, -0.67002, 11.20870, 0.25716, y_axis_clr);     //345
+//y_axis_nodes.add_point(346, -0.63885, 11.48984, 0.07034, y_axis_clr);     //346
+//y_axis_nodes.add_point(347, -0.48761, 12.03209, 0.10173, y_axis_clr);     //347
+//y_axis_nodes.add_point(348, -0.50635, 11.76145, 0.26234, y_axis_clr);     //348
+//y_axis_nodes.add_point(349, -0.47743, 11.48892, 0.43064, y_axis_clr);     //349
+//y_axis_nodes.add_point(350, -0.39394, 11.20795, 0.60014, y_axis_clr);     //350
+//y_axis_nodes.add_point(351, -0.31907, 12.30017, -0.28320, y_axis_clr);     //351
+//y_axis_nodes.add_point(352, -0.42325, 12.30373, -0.04533, y_axis_clr);     //352
+//y_axis_nodes.add_point(353, -0.37044, 12.30041, 0.21149, y_axis_clr);     //353
+//y_axis_nodes.add_point(354, -0.17865, 12.30137, 0.38706, y_axis_clr);     //354
+//y_axis_nodes.add_point(355, 0.08244, 12.29901, 0.41889, y_axis_clr);     //355
+//y_axis_nodes.add_point(356, 0.31460, 12.29487, 0.29025, y_axis_clr);     //356
+//y_axis_nodes.add_point(357, 0.07867, 13.48273, -0.07869, y_axis_clr);     //357
+//y_axis_nodes.add_point(358, 0.13874, 13.14485, -0.14596, y_axis_clr);     //358
+//y_axis_nodes.add_point(359, 0.28185, 12.66600, -0.16983, y_axis_clr);     //359
+//y_axis_nodes.add_point(360, 0.16595, 12.57250, -0.31269, y_axis_clr);     //360
+//y_axis_nodes.add_point(361, 0.23232, 12.90382, -0.12883, y_axis_clr);     //361
+//y_axis_nodes.add_point(362, 0.24952, 11.78687, -0.50525, y_axis_clr);     //362
+//y_axis_nodes.add_point(363, 0.46921, 11.86298, -0.27370, y_axis_clr);     //363
+//y_axis_nodes.add_point(364, 0.29903, 12.06332, -0.38790, y_axis_clr);     //364
+//y_axis_nodes.add_point(365, 0.43659, 12.10258, -0.19780, y_axis_clr);     //365
+//y_axis_nodes.add_point(366, -0.09175, 11.76583, -0.56167, y_axis_clr);     //366
+//y_axis_nodes.add_point(367, 0.03835, 12.03667, -0.49541, y_axis_clr);     //367
+//y_axis_nodes.add_point(368, 0.66997, 11.20404, -0.26074, y_axis_clr);     //368
+//y_axis_nodes.add_point(369, 0.40247, 11.21647, -0.59171, y_axis_clr);     //369
+//y_axis_nodes.add_point(370, -0.44841, 11.20999, -0.55991, y_axis_clr);     //370
+//y_axis_nodes.add_point(371, -0.02899, 11.21153, -0.71634, y_axis_clr);     //371
+//y_axis_nodes.add_point(372, 0.50975, 11.53904, -0.36951, y_axis_clr);     //372
+//y_axis_nodes.add_point(373, 0.14508, 11.50162, -0.62290, y_axis_clr);     //373
+//y_axis_nodes.add_point(374, -0.25728, 11.49229, -0.58825, y_axis_clr);     //374
+//y_axis_nodes.add_point(375, 0.33729, 12.35743, -0.23547, y_axis_clr);     //375
+//y_axis_nodes.add_point(376, 0.13452, 12.30543, -0.40338, y_axis_clr);     //376
+//y_axis_nodes.add_point(377, 0.14435, 12.83892, -0.24336, y_axis_clr);     //377
+//y_axis_nodes.add_point(378, 0.00416, 12.50679, -0.37150, y_axis_clr);     //378
+//y_axis_nodes.add_point(379, -0.10620, 12.29430, -0.41481, y_axis_clr);     //379
+//y_axis_nodes.add_point(380, -0.25150, 12.03197, -0.42999, y_axis_clr);     //380
+//y_axis_nodes.add_point(381, -0.40527, 11.76286, -0.40068, y_axis_clr);     //381
+//y_axis_nodes.add_point(382, -0.55689, 11.49081, -0.32033, y_axis_clr);     //382
+//y_axis_nodes.add_point(383, -0.69283, 11.20947, -0.18644, y_axis_clr);     //383
+//y_axis_nodes.add_point(384, 0.72667, 11.17500, 0.00000, y_axis_clr);     //384
+//y_axis_nodes.add_point(385, 0.65333, 11.45000, 0.00000, y_axis_clr);     //385
+//y_axis_nodes.add_point(386, 0.58000, 11.72500, 0.00000, y_axis_clr);     //386
+//y_axis_nodes.add_point(387, 0.50667, 12.00000, 0.00000, y_axis_clr);     //387
+//y_axis_nodes.add_point(388, 0.43333, 12.27500, 0.00000, y_axis_clr);     //388
+//y_axis_nodes.add_point(389, 0.36000, 12.55000, 0.00000, y_axis_clr);     //389
+//y_axis_nodes.add_point(390, 0.28667, 12.82500, 0.00000, y_axis_clr);     //390
+//y_axis_nodes.add_point(391, 0.21333, 13.10000, 0.00000, y_axis_clr);     //391
+//y_axis_nodes.add_point(392, 0.14000, 13.37500, 0.00000, y_axis_clr);     //392
+//y_axis_nodes.add_point(393, 0.05393, 13.65000, -0.03919, y_axis_clr);     //393
+//y_axis_nodes.add_point(394, 0.02060, 13.65000, -0.06340, y_axis_clr);     //394
+//y_axis_nodes.add_point(395, -0.02060, 13.65000, -0.06340, y_axis_clr);     //395
+//y_axis_nodes.add_point(396, -0.05393, 13.65000, -0.03919, y_axis_clr);     //396
+//y_axis_nodes.add_point(397, -0.06667, 13.65000, 0.00000, y_axis_clr);     //397
+//y_axis_nodes.add_point(398, -0.05393, 13.65000, 0.03919, y_axis_clr);     //398
+//y_axis_nodes.add_point(399, -0.02060, 13.65000, 0.06340, y_axis_clr);     //399
+//y_axis_nodes.add_point(400, 0.02060, 13.65000, 0.06340, y_axis_clr);     //400
+//y_axis_nodes.add_point(401, 0.05393, 13.65000, 0.03919, y_axis_clr);     //401
+//y_axis_nodes.add_point(402, 0.06667, 13.65000, 0.00000, y_axis_clr);     //402
+//y_axis_nodes.add_point(403, 0.12351, 10.89995, -0.38033, y_axis_clr);     //403
+//y_axis_nodes.add_point(404, -0.32350, 10.89993, -0.23497, y_axis_clr);     //404
+//y_axis_nodes.add_point(405, -0.32356, 10.89987, 0.23517, y_axis_clr);     //405
+//y_axis_nodes.add_point(406, 0.12360, 10.89985, 0.38030, y_axis_clr);     //406
+//y_axis_nodes.add_point(407, 0.40000, 10.89990, 0.00000, y_axis_clr);     //407
+//y_axis_nodes.add_point(408, 0.64218, 10.89985, 0.46624, y_axis_clr);     //408
+//y_axis_nodes.add_point(409, 0.24559, 10.89981, 0.75696, y_axis_clr);     //409
+//y_axis_nodes.add_point(410, -0.24562, 10.89981, 0.75672, y_axis_clr);     //410
+//y_axis_nodes.add_point(411, -0.64622, 10.89984, 0.46966, y_axis_clr);     //411
+//y_axis_nodes.add_point(412, -0.79322, 10.89990, 0.00023, y_axis_clr);     //412
+//y_axis_nodes.add_point(413, -0.64551, 10.89996, -0.46872, y_axis_clr);     //413
+//y_axis_nodes.add_point(414, -0.24598, 10.89999, -0.75663, y_axis_clr);     //414
+//y_axis_nodes.add_point(415, 0.24534, 10.90000, -0.75548, y_axis_clr);     //415
+//y_axis_nodes.add_point(416, 0.64512, 10.89996, -0.46899, y_axis_clr);     //416
+//y_axis_nodes.add_point(417, 0.80006, 10.90002, 0.00000, y_axis_clr);     //417
+//y_axis_nodes.add_point(418, 0.10435, 1.25211, -0.38615, y_axis_clr);     //418
+//y_axis_nodes.add_point(419, 0.11950, 1.71604, -0.38173, y_axis_clr);     //419
+//y_axis_nodes.add_point(420, -0.32423, 1.48323, -0.23425, y_axis_clr);     //420
+//y_axis_nodes.add_point(421, 0.12438, 2.70428, -0.38017, y_axis_clr);     //421
+//y_axis_nodes.add_point(422, -0.32290, 2.50849, -0.23608, y_axis_clr);     //422
+//y_axis_nodes.add_point(423, 0.12399, 2.20713, -0.38030, y_axis_clr);     //423
+//y_axis_nodes.add_point(424, -0.32285, 2.00449, -0.23615, y_axis_clr);     //424
+//y_axis_nodes.add_point(425, 0.13433, 1.21821, 0.37677, y_axis_clr);     //425
+//y_axis_nodes.add_point(426, 0.12471, 2.11907, 0.38006, y_axis_clr);     //426
+//y_axis_nodes.add_point(427, 0.12336, 1.64456, 0.38050, y_axis_clr);     //427
+//y_axis_nodes.add_point(428, -0.32437, 2.31470, 0.23407, y_axis_clr);     //428
+//y_axis_nodes.add_point(429, -0.32828, 1.82259, 0.22854, y_axis_clr);     //429
+//y_axis_nodes.add_point(430, -0.33939, 1.33673, 0.21169, y_axis_clr);     //430
+//y_axis_nodes.add_point(431, 0.12368, 3.70051, -0.38040, y_axis_clr);     //431
+//y_axis_nodes.add_point(432, -0.32364, 3.50159, -0.23506, y_axis_clr);     //432
+//y_axis_nodes.add_point(433, 0.12462, 3.10323, 0.38009, y_axis_clr);     //433
+//y_axis_nodes.add_point(434, -0.32332, 3.30280, 0.23551, y_axis_clr);     //434
+//y_axis_nodes.add_point(435, 0.12392, 3.20169, -0.38032, y_axis_clr);     //435
+//y_axis_nodes.add_point(436, -0.32352, 3.00452, -0.23524, y_axis_clr);     //436
+//y_axis_nodes.add_point(437, -0.32345, 2.80728, 0.23532, y_axis_clr);     //437
+//y_axis_nodes.add_point(438, 0.12507, 2.60863, 0.37995, y_axis_clr);     //438
+//y_axis_nodes.add_point(439, -0.32363, 5.50000, -0.23509, y_axis_clr);     //439
+//y_axis_nodes.add_point(440, -0.32363, 6.00000, -0.23509, y_axis_clr);     //440
+//y_axis_nodes.add_point(441, 0.12360, 5.70000, -0.38043, y_axis_clr);     //441
+//y_axis_nodes.add_point(442, 0.12360, 6.20000, -0.38042, y_axis_clr);     //442
+//y_axis_nodes.add_point(443, -0.32363, 4.50000, -0.23508, y_axis_clr);     //443
+//y_axis_nodes.add_point(444, 0.12360, 4.70000, -0.38043, y_axis_clr);     //444
+//y_axis_nodes.add_point(445, -0.32363, 5.00000, -0.23508, y_axis_clr);     //445
+//y_axis_nodes.add_point(446, 0.12360, 5.20000, -0.38043, y_axis_clr);     //446
+//y_axis_nodes.add_point(447, 0.12374, 5.60000, 0.38038, y_axis_clr);     //447
+//y_axis_nodes.add_point(448, 0.12376, 5.10000, 0.38037, y_axis_clr);     //448
+//y_axis_nodes.add_point(449, 0.12378, 4.10000, 0.38037, y_axis_clr);     //449
+//y_axis_nodes.add_point(450, 0.12377, 4.60000, 0.38037, y_axis_clr);     //450
+//y_axis_nodes.add_point(451, -0.32357, 5.80000, 0.23516, y_axis_clr);     //451
+//y_axis_nodes.add_point(452, -0.32357, 5.30000, 0.23516, y_axis_clr);     //452
+//y_axis_nodes.add_point(453, -0.32357, 4.80000, 0.23517, y_axis_clr);     //453
+//y_axis_nodes.add_point(454, -0.32356, 4.30000, 0.23517, y_axis_clr);     //454
+//y_axis_nodes.add_point(455, 0.12360, 4.20000, -0.38043, y_axis_clr);     //455
+//y_axis_nodes.add_point(456, -0.32363, 4.00000, -0.23508, y_axis_clr);     //456
+//y_axis_nodes.add_point(457, -0.32348, 3.80060, 0.23528, y_axis_clr);     //457
+//y_axis_nodes.add_point(458, 0.12397, 3.60078, 0.38031, y_axis_clr);     //458
+//y_axis_nodes.add_point(459, 0.10374, 10.54642, 0.38631, y_axis_clr);     //459
+//y_axis_nodes.add_point(460, -0.32437, 10.31426, 0.23406, y_axis_clr);     //460
+//y_axis_nodes.add_point(461, 0.12364, 9.59032, 0.38041, y_axis_clr);     //461
+//y_axis_nodes.add_point(462, 0.12461, 8.59704, 0.38010, y_axis_clr);     //462
+//y_axis_nodes.add_point(463, 0.12458, 9.09416, 0.38011, y_axis_clr);     //463
+//y_axis_nodes.add_point(464, -0.32304, 8.79205, 0.23589, y_axis_clr);     //464
+//y_axis_nodes.add_point(465, -0.32302, 9.28729, 0.23593, y_axis_clr);     //465
+//y_axis_nodes.add_point(466, 0.11915, 10.08155, 0.38184, y_axis_clr);     //466
+//y_axis_nodes.add_point(467, -0.32318, 9.79177, 0.23570, y_axis_clr);     //467
+//y_axis_nodes.add_point(468, 0.13394, 10.58143, -0.37691, y_axis_clr);     //468
+//y_axis_nodes.add_point(469, 0.12292, 10.15422, -0.38064, y_axis_clr);     //469
+//y_axis_nodes.add_point(470, 0.12461, 9.18811, -0.38009, y_axis_clr);     //470
+//y_axis_nodes.add_point(471, 0.12437, 9.67883, -0.38017, y_axis_clr);     //471
+//y_axis_nodes.add_point(472, -0.32362, 8.98773, -0.23510, y_axis_clr);     //472
+//y_axis_nodes.add_point(473, -0.32433, 9.48069, -0.23412, y_axis_clr);     //473
+//y_axis_nodes.add_point(474, -0.32825, 9.97429, -0.22859, y_axis_clr);     //474
+//y_axis_nodes.add_point(475, -0.33958, 10.46194, -0.21140, y_axis_clr);     //475
+//y_axis_nodes.add_point(476, -0.32358, 6.80000, 0.23515, y_axis_clr);     //476
+//y_axis_nodes.add_point(477, 0.12372, 6.60000, 0.38039, y_axis_clr);     //477
+//y_axis_nodes.add_point(478, -0.32355, 7.79913, 0.23519, y_axis_clr);     //478
+//y_axis_nodes.add_point(479, 0.12369, 7.60000, 0.38039, y_axis_clr);     //479
+//y_axis_nodes.add_point(480, -0.32358, 7.30000, 0.23515, y_axis_clr);     //480
+//y_axis_nodes.add_point(481, 0.12370, 7.10000, 0.38039, y_axis_clr);     //481
+//y_axis_nodes.add_point(482, 0.12360, 7.20000, -0.38042, y_axis_clr);     //482
+//y_axis_nodes.add_point(483, 0.12426, 8.19780, -0.38021, y_axis_clr);     //483
+//y_axis_nodes.add_point(484, 0.12375, 7.69948, -0.38038, y_axis_clr);     //484
+//y_axis_nodes.add_point(485, -0.32362, 7.00000, -0.23509, y_axis_clr);     //485
+//y_axis_nodes.add_point(486, -0.32362, 7.50000, -0.23510, y_axis_clr);     //486
+//y_axis_nodes.add_point(487, -0.32347, 7.99808, -0.23531, y_axis_clr);     //487
+//y_axis_nodes.add_point(488, 0.12381, 8.09932, 0.38036, y_axis_clr);     //488
+//y_axis_nodes.add_point(489, -0.32335, 8.29661, 0.23546, y_axis_clr);     //489
+//y_axis_nodes.add_point(490, -0.32341, 8.49397, -0.23539, y_axis_clr);     //490
+//y_axis_nodes.add_point(491, 0.12487, 8.69409, -0.38001, y_axis_clr);     //491
+//y_axis_nodes.add_point(492, 0.12360, 6.70000, -0.38042, y_axis_clr);     //492
+//y_axis_nodes.add_point(493, -0.32362, 6.50000, -0.23509, y_axis_clr);     //493
+//y_axis_nodes.add_point(494, -0.32358, 6.30000, 0.23515, y_axis_clr);     //494
+//y_axis_nodes.add_point(495, 0.12373, 6.10000, 0.38038, y_axis_clr);     //495
+//y_axis_nodes.add_point(496, 0.12355, 0.90000, -0.38005, y_axis_clr);     //496
+//y_axis_nodes.add_point(497, -0.32346, 0.90000, -0.23504, y_axis_clr);     //497
+//y_axis_nodes.add_point(498, -0.32356, 0.90000, 0.23491, y_axis_clr);     //498
+//y_axis_nodes.add_point(499, 0.12324, 0.90000, 0.38018, y_axis_clr);     //499
+//y_axis_nodes.add_point(500, 0.40001, 0.90000, 0.00000, y_axis_clr);     //500
+//y_axis_nodes.add_point(501, 0.40000, 1.40000, 0.00000, y_axis_clr);     //501
+//y_axis_nodes.add_point(502, 0.40000, 1.90000, 0.00000, y_axis_clr);     //502
+//y_axis_nodes.add_point(503, 0.40000, 2.40000, 0.00000, y_axis_clr);     //503
+//y_axis_nodes.add_point(504, 0.40000, 2.90000, 0.00000, y_axis_clr);     //504
+//y_axis_nodes.add_point(505, 0.40000, 3.40000, 0.00000, y_axis_clr);     //505
+//y_axis_nodes.add_point(506, 0.40000, 3.90000, 0.00000, y_axis_clr);     //506
+//y_axis_nodes.add_point(507, 0.40000, 4.40000, 0.00000, y_axis_clr);     //507
+//y_axis_nodes.add_point(508, 0.40000, 4.90000, 0.00000, y_axis_clr);     //508
+//y_axis_nodes.add_point(509, 0.40000, 5.40000, 0.00000, y_axis_clr);     //509
+//y_axis_nodes.add_point(510, 0.40000, 5.90000, 0.00000, y_axis_clr);     //510
+//y_axis_nodes.add_point(511, 0.40000, 6.40000, 0.00000, y_axis_clr);     //511
+//y_axis_nodes.add_point(512, 0.40000, 6.90000, 0.00000, y_axis_clr);     //512
+//y_axis_nodes.add_point(513, 0.40000, 7.40000, 0.00000, y_axis_clr);     //513
+//y_axis_nodes.add_point(514, 0.40000, 7.90000, 0.00000, y_axis_clr);     //514
+//y_axis_nodes.add_point(515, 0.40000, 8.40000, 0.00000, y_axis_clr);     //515
+//y_axis_nodes.add_point(516, 0.40000, 8.90000, 0.00000, y_axis_clr);     //516
+//y_axis_nodes.add_point(517, 0.40000, 9.40000, 0.00000, y_axis_clr);     //517
+//y_axis_nodes.add_point(518, 0.40000, 9.90000, 0.00000, y_axis_clr);     //518
+//y_axis_nodes.add_point(519, 0.40000, 10.40000, 0.00000, y_axis_clr);     //519
+//y_axis_nodes.add_point(520, 0.12361, 10.90000, 0.38042, y_axis_clr);     //520
+//y_axis_nodes.add_point(521, -0.32361, 10.90000, 0.23511, y_axis_clr);     //521
+//y_axis_nodes.add_point(522, -0.32361, 10.90000, -0.23511, y_axis_clr);     //522
+//y_axis_nodes.add_point(523, 0.12361, 10.90000, -0.38042, y_axis_clr);     //523
+//y_axis_nodes.add_point(524, 0.40000, 10.90000, 0.00000, y_axis_clr);     //524
+
+//y_axis_tris = new tri_elements();
+//y_axis_tris.add_triangle(571, 323, 377, 301);     //571
+//y_axis_tris.add_triangle(572, 360, 301, 377);     //572
+//y_axis_tris.add_triangle(573, 374, 373, 371);     //573
+//y_axis_tris.add_triangle(574, 382, 374, 370);     //574
+//y_axis_tris.add_triangle(575, 370, 371, 414);     //575
+//y_axis_tris.add_triangle(576, 383, 370, 413);     //576
+//y_axis_tris.add_triangle(577, 369, 371, 373);     //577
+//y_axis_tris.add_triangle(578, 415, 414, 371);     //578
+//y_axis_tris.add_triangle(579, 368, 372, 385);     //579
+//y_axis_tris.add_triangle(580, 368, 384, 417);     //580
+//y_axis_tris.add_triangle(581, 369, 368, 416);     //581
+//y_axis_tris.add_triangle(582, 367, 380, 379);     //582
+//y_axis_tris.add_triangle(583, 366, 381, 380);     //583
+//y_axis_tris.add_triangle(584, 374, 382, 381);     //584
+//y_axis_tris.add_triangle(585, 365, 375, 388);     //585
+//y_axis_tris.add_triangle(586, 364, 376, 375);     //586
+//y_axis_tris.add_triangle(587, 372, 363, 386);     //587
+//y_axis_tris.add_triangle(588, 363, 365, 387);     //588
+//y_axis_tris.add_triangle(589, 373, 374, 366);     //589
+//y_axis_tris.add_triangle(590, 372, 373, 362);     //590
+//y_axis_tris.add_triangle(591, 362, 366, 367);     //591
+//y_axis_tris.add_triangle(592, 363, 362, 364);     //592
+//y_axis_tris.add_triangle(593, 360, 378, 301);     //593
+//y_axis_tris.add_triangle(594, 376, 379, 378);     //594
+//y_axis_tris.add_triangle(595, 359, 361, 390);     //595
+//y_axis_tris.add_triangle(596, 375, 359, 389);     //596
+//y_axis_tris.add_triangle(597, 360, 359, 375);     //597
+//y_axis_tris.add_triangle(598, 361, 377, 358);     //598
+//y_axis_tris.add_triangle(599, 391, 390, 361);     //599
+//y_axis_tris.add_triangle(600, 357, 392, 358);     //600
+//y_axis_tris.add_triangle(601, 357, 393, 402);     //601
+//y_axis_tris.add_triangle(602, 345, 350, 349);     //602
+//y_axis_tris.add_triangle(603, 411, 410, 350);     //603
+//y_axis_tris.add_triangle(604, 383, 345, 346);     //604
+//y_axis_tris.add_triangle(605, 412, 411, 345);     //605
+//y_axis_tris.add_triangle(606, 346, 349, 348);     //606
+//y_axis_tris.add_triangle(607, 382, 346, 344);     //607
+//y_axis_tris.add_triangle(608, 343, 347, 352);     //608
+//y_axis_tris.add_triangle(609, 344, 348, 347);     //609
+//y_axis_tris.add_triangle(610, 380, 343, 351);     //610
+//y_axis_tris.add_triangle(611, 381, 344, 343);     //611
+//y_axis_tris.add_triangle(612, 339, 350, 410);     //612
+//y_axis_tris.add_triangle(613, 340, 349, 350);     //613
+//y_axis_tris.add_triangle(614, 338, 339, 409);     //614
+//y_axis_tris.add_triangle(615, 341, 340, 339);     //615
+//y_axis_tris.add_triangle(616, 337, 408, 417);     //616
+//y_axis_tris.add_triangle(617, 337, 384, 385);     //617
+//y_axis_tris.add_triangle(618, 338, 337, 342);     //618
+//y_axis_tris.add_triangle(619, 340, 341, 336);     //619
+//y_axis_tris.add_triangle(620, 349, 340, 334);     //620
+//y_axis_tris.add_triangle(621, 333, 335, 354);     //621
+//y_axis_tris.add_triangle(622, 334, 336, 335);     //622
+//y_axis_tris.add_triangle(623, 347, 333, 353);     //623
+//y_axis_tris.add_triangle(624, 348, 334, 333);     //624
+//y_axis_tris.add_triangle(625, 342, 385, 386);     //625
+//y_axis_tris.add_triangle(626, 341, 342, 332);     //626
+//y_axis_tris.add_triangle(627, 331, 335, 336);     //627
+//y_axis_tris.add_triangle(628, 355, 354, 335);     //628
+//y_axis_tris.add_triangle(629, 330, 332, 386);     //629
+//y_axis_tris.add_triangle(630, 330, 387, 388);     //630
+//y_axis_tris.add_triangle(631, 331, 330, 356);     //631
+//y_axis_tris.add_triangle(632, 325, 329, 328);     //632
+//y_axis_tris.add_triangle(633, 352, 353, 329);     //633
+//y_axis_tris.add_triangle(634, 326, 301, 324);     //634
+//y_axis_tris.add_triangle(635, 324, 378, 379);     //635
+//y_axis_tris.add_triangle(636, 325, 324, 351);     //636
+//y_axis_tris.add_triangle(637, 326, 328, 327);     //637
+//y_axis_tris.add_triangle(638, 301, 326, 323);     //638
+//y_axis_tris.add_triangle(639, 323, 327, 322);     //639
+//y_axis_tris.add_triangle(640, 358, 323, 322);     //640
+//y_axis_tris.add_triangle(641, 357, 394, 393);     //641
+//y_axis_tris.add_triangle(642, 354, 355, 316);     //642
+//y_axis_tris.add_triangle(643, 353, 354, 315);     //643
+//y_axis_tris.add_triangle(644, 315, 316, 318);     //644
+//y_axis_tris.add_triangle(645, 329, 315, 318);     //645
+//y_axis_tris.add_triangle(646, 314, 316, 355);     //646
+//y_axis_tris.add_triangle(647, 319, 318, 316);     //647
+//y_axis_tris.add_triangle(648, 313, 356, 388);     //648
+//y_axis_tris.add_triangle(649, 390, 313, 389);     //649
+//y_axis_tris.add_triangle(650, 320, 314, 313);     //650
+//y_axis_tris.add_triangle(651, 312, 310, 317);     //651
+//y_axis_tris.add_triangle(652, 328, 317, 310);     //652
+//y_axis_tris.add_triangle(653, 310, 312, 311);     //653
+//y_axis_tris.add_triangle(654, 327, 310, 311);     //654
+//y_axis_tris.add_triangle(655, 357, 395, 394);     //655
+//y_axis_tris.add_triangle(656, 308, 312, 319);     //656
+//y_axis_tris.add_triangle(657, 304, 311, 308);     //657
+//y_axis_tris.add_triangle(658, 309, 307, 395);     //658
+//y_axis_tris.add_triangle(659, 391, 321, 390);     //659
+//y_axis_tris.add_triangle(660, 320, 321, 305);     //660
+//y_axis_tris.add_triangle(661, 304, 307, 311);     //661
+//y_axis_tris.add_triangle(662, 397, 396, 307);     //662
+//y_axis_tris.add_triangle(663, 303, 304, 308);     //663
+//y_axis_tris.add_triangle(664, 398, 397, 307);     //664
+//y_axis_tris.add_triangle(665, 306, 391, 392);     //665
+//y_axis_tris.add_triangle(666, 402, 302, 392);     //666
+//y_axis_tris.add_triangle(667, 400, 304, 302);     //667
+//y_axis_tris.add_triangle(668, 399, 398, 307);     //668
+//y_axis_tris.add_triangle(669, 400, 399, 304);     //669
+//y_axis_tris.add_triangle(670, 401, 400, 302);     //670
+//y_axis_tris.add_triangle(671, 402, 401, 302);     //671
+//y_axis_tris.add_triangle(672, 392, 303, 306);     //672
+//y_axis_tris.add_triangle(673, 392, 302, 303);     //673
+//y_axis_tris.add_triangle(674, 304, 303, 302);     //674
+//y_axis_tris.add_triangle(675, 305, 306, 303);     //675
+//y_axis_tris.add_triangle(676, 307, 304, 399);     //676
+//y_axis_tris.add_triangle(677, 308, 305, 303);     //677
+//y_axis_tris.add_triangle(678, 305, 308, 319);     //678
+//y_axis_tris.add_triangle(679, 306, 305, 321);     //679
+//y_axis_tris.add_triangle(680, 391, 306, 321);     //680
+//y_axis_tris.add_triangle(681, 395, 307, 396);     //681
+//y_axis_tris.add_triangle(682, 312, 308, 311);     //682
+//y_axis_tris.add_triangle(683, 319, 320, 305);     //683
+//y_axis_tris.add_triangle(684, 309, 311, 307);     //684
+//y_axis_tris.add_triangle(685, 322, 309, 395);     //685
+//y_axis_tris.add_triangle(686, 309, 322, 327);     //686
+//y_axis_tris.add_triangle(687, 311, 309, 327);     //687
+//y_axis_tris.add_triangle(688, 310, 327, 328);     //688
+//y_axis_tris.add_triangle(689, 318, 319, 312);     //689
+//y_axis_tris.add_triangle(690, 317, 318, 312);     //690
+//y_axis_tris.add_triangle(691, 320, 319, 316);     //691
+//y_axis_tris.add_triangle(692, 321, 320, 313);     //692
+//y_axis_tris.add_triangle(693, 390, 321, 313);     //693
+//y_axis_tris.add_triangle(694, 313, 314, 356);     //694
+//y_axis_tris.add_triangle(695, 389, 313, 388);     //695
+//y_axis_tris.add_triangle(696, 316, 314, 320);     //696
+//y_axis_tris.add_triangle(697, 355, 356, 314);     //697
+//y_axis_tris.add_triangle(698, 317, 328, 329);     //698
+//y_axis_tris.add_triangle(699, 318, 317, 329);     //699
+//y_axis_tris.add_triangle(700, 315, 329, 353);     //700
+//y_axis_tris.add_triangle(701, 316, 315, 354);     //701
+//y_axis_tris.add_triangle(702, 357, 322, 395);     //702
+//y_axis_tris.add_triangle(703, 323, 358, 377);     //703
+//y_axis_tris.add_triangle(704, 327, 323, 326);     //704
+//y_axis_tris.add_triangle(705, 351, 352, 325);     //705
+//y_axis_tris.add_triangle(706, 379, 351, 324);     //706
+//y_axis_tris.add_triangle(707, 324, 325, 326);     //707
+//y_axis_tris.add_triangle(708, 378, 324, 301);     //708
+//y_axis_tris.add_triangle(709, 329, 325, 352);     //709
+//y_axis_tris.add_triangle(710, 328, 326, 325);     //710
+//y_axis_tris.add_triangle(711, 356, 355, 331);     //711
+//y_axis_tris.add_triangle(712, 388, 356, 330);     //712
+//y_axis_tris.add_triangle(713, 330, 331, 332);     //713
+//y_axis_tris.add_triangle(714, 387, 330, 386);     //714
+//y_axis_tris.add_triangle(715, 335, 331, 355);     //715
+//y_axis_tris.add_triangle(716, 336, 332, 331);     //716
+//y_axis_tris.add_triangle(717, 332, 336, 341);     //717
+//y_axis_tris.add_triangle(718, 386, 332, 342);     //718
+//y_axis_tris.add_triangle(719, 333, 347, 348);     //719
+//y_axis_tris.add_triangle(720, 353, 352, 347);     //720
+//y_axis_tris.add_triangle(721, 335, 333, 334);     //721
+//y_axis_tris.add_triangle(722, 354, 353, 333);     //722
+//y_axis_tris.add_triangle(723, 334, 348, 349);     //723
+//y_axis_tris.add_triangle(724, 336, 334, 340);     //724
+//y_axis_tris.add_triangle(725, 342, 341, 338);     //725
+//y_axis_tris.add_triangle(726, 385, 342, 337);     //726
+//y_axis_tris.add_triangle(727, 337, 338, 408);     //727
+//y_axis_tris.add_triangle(728, 384, 337, 417);     //728
+//y_axis_tris.add_triangle(729, 339, 338, 341);     //729
+//y_axis_tris.add_triangle(730, 409, 408, 338);     //730
+//y_axis_tris.add_triangle(731, 350, 339, 340);     //731
+//y_axis_tris.add_triangle(732, 410, 409, 339);     //732
+//y_axis_tris.add_triangle(733, 343, 380, 381);     //733
+//y_axis_tris.add_triangle(734, 351, 379, 380);     //734
+//y_axis_tris.add_triangle(735, 347, 343, 344);     //735
+//y_axis_tris.add_triangle(736, 352, 351, 343);     //736
+//y_axis_tris.add_triangle(737, 344, 381, 382);     //737
+//y_axis_tris.add_triangle(738, 348, 344, 346);     //738
+//y_axis_tris.add_triangle(739, 345, 383, 412);     //739
+//y_axis_tris.add_triangle(740, 346, 382, 383);     //740
+//y_axis_tris.add_triangle(741, 350, 345, 411);     //741
+//y_axis_tris.add_triangle(742, 349, 346, 345);     //742
+//y_axis_tris.add_triangle(743, 357, 358, 322);     //743
+//y_axis_tris.add_triangle(744, 392, 357, 402);     //744
+//y_axis_tris.add_triangle(745, 358, 392, 391);     //745
+//y_axis_tris.add_triangle(746, 358, 391, 361);     //746
+//y_axis_tris.add_triangle(747, 375, 376, 360);     //747
+//y_axis_tris.add_triangle(748, 388, 375, 389);     //748
+//y_axis_tris.add_triangle(749, 359, 377, 361);     //749
+//y_axis_tris.add_triangle(750, 389, 359, 390);     //750
+//y_axis_tris.add_triangle(751, 378, 360, 376);     //751
+//y_axis_tris.add_triangle(752, 377, 359, 360);     //752
+//y_axis_tris.add_triangle(753, 364, 365, 363);     //753
+//y_axis_tris.add_triangle(754, 367, 364, 362);     //754
+//y_axis_tris.add_triangle(755, 362, 363, 372);     //755
+//y_axis_tris.add_triangle(756, 366, 362, 373);     //756
+//y_axis_tris.add_triangle(757, 386, 363, 387);     //757
+//y_axis_tris.add_triangle(758, 385, 372, 386);     //758
+//y_axis_tris.add_triangle(759, 364, 367, 376);     //759
+//y_axis_tris.add_triangle(760, 365, 364, 375);     //760
+//y_axis_tris.add_triangle(761, 387, 365, 388);     //761
+//y_axis_tris.add_triangle(762, 381, 366, 374);     //762
+//y_axis_tris.add_triangle(763, 380, 367, 366);     //763
+//y_axis_tris.add_triangle(764, 379, 376, 367);     //764
+//y_axis_tris.add_triangle(765, 416, 415, 369);     //765
+//y_axis_tris.add_triangle(766, 417, 416, 368);     //766
+//y_axis_tris.add_triangle(767, 368, 369, 372);     //767
+//y_axis_tris.add_triangle(768, 384, 368, 385);     //768
+//y_axis_tris.add_triangle(769, 371, 369, 415);     //769
+//y_axis_tris.add_triangle(770, 373, 372, 369);     //770
+//y_axis_tris.add_triangle(771, 413, 412, 383);     //771
+//y_axis_tris.add_triangle(772, 414, 413, 370);     //772
+//y_axis_tris.add_triangle(773, 370, 383, 382);     //773
+//y_axis_tris.add_triangle(774, 371, 370, 374);     //774
+//y_axis_tris.add_triangle(775, 416, 403, 407);     //775
+//y_axis_tris.add_triangle(776, 415, 403, 416);     //776
+//y_axis_tris.add_triangle(777, 415, 414, 403);     //777
+//y_axis_tris.add_triangle(778, 414, 404, 403);     //778
+//y_axis_tris.add_triangle(779, 414, 413, 404);     //779
+//y_axis_tris.add_triangle(780, 413, 412, 404);     //780
+//y_axis_tris.add_triangle(781, 412, 405, 404);     //781
+//y_axis_tris.add_triangle(782, 412, 411, 405);     //782
+//y_axis_tris.add_triangle(783, 411, 410, 405);     //783
+//y_axis_tris.add_triangle(784, 410, 406, 405);     //784
+//y_axis_tris.add_triangle(785, 410, 409, 406);     //785
+//y_axis_tris.add_triangle(786, 407, 417, 416);     //786
+//y_axis_tris.add_triangle(787, 409, 408, 406);     //787
+//y_axis_tris.add_triangle(788, 408, 407, 406);     //788
+//y_axis_tris.add_triangle(789, 408, 417, 407);     //789
+//y_axis_tris.add_triangle(790, 484, 483, 487);     //790
+//y_axis_tris.add_triangle(791, 483, 491, 490);     //791
+//y_axis_tris.add_triangle(792, 514, 515, 483);     //792
+//y_axis_tris.add_triangle(793, 515, 516, 491);     //793
+//y_axis_tris.add_triangle(794, 492, 482, 485);     //794
+//y_axis_tris.add_triangle(795, 482, 484, 486);     //795
+//y_axis_tris.add_triangle(796, 512, 513, 482);     //796
+//y_axis_tris.add_triangle(797, 513, 514, 484);     //797
+//y_axis_tris.add_triangle(798, 481, 479, 513);     //798
+//y_axis_tris.add_triangle(799, 479, 488, 514);     //799
+//y_axis_tris.add_triangle(800, 478, 480, 486);     //800
+//y_axis_tris.add_triangle(801, 479, 481, 480);     //801
+//y_axis_tris.add_triangle(802, 489, 478, 487);     //802
+//y_axis_tris.add_triangle(803, 488, 479, 478);     //803
+//y_axis_tris.add_triangle(804, 495, 477, 511);     //804
+//y_axis_tris.add_triangle(805, 477, 481, 512);     //805
+//y_axis_tris.add_triangle(806, 476, 494, 493);     //806
+//y_axis_tris.add_triangle(807, 477, 495, 494);     //807
+//y_axis_tris.add_triangle(808, 480, 476, 485);     //808
+//y_axis_tris.add_triangle(809, 481, 477, 476);     //809
+//y_axis_tris.add_triangle(810, 471, 470, 517);     //810
+//y_axis_tris.add_triangle(811, 470, 491, 516);     //811
+//y_axis_tris.add_triangle(812, 473, 472, 470);     //812
+//y_axis_tris.add_triangle(813, 472, 490, 491);     //813
+//y_axis_tris.add_triangle(814, 469, 471, 518);     //814
+//y_axis_tris.add_triangle(815, 474, 473, 471);     //815
+//y_axis_tris.add_triangle(816, 468, 519, 524);     //816
+//y_axis_tris.add_triangle(817, 522, 475, 468);     //817
+//y_axis_tris.add_triangle(818, 475, 474, 469);     //818
+//y_axis_tris.add_triangle(819, 465, 472, 473);     //819
+//y_axis_tris.add_triangle(820, 464, 489, 490);     //820
+//y_axis_tris.add_triangle(821, 462, 488, 489);     //821
+//y_axis_tris.add_triangle(822, 516, 462, 463);     //822
+//y_axis_tris.add_triangle(823, 515, 514, 488);     //823
+//y_axis_tris.add_triangle(824, 461, 465, 467);     //824
+//y_axis_tris.add_triangle(825, 463, 464, 465);     //825
+//y_axis_tris.add_triangle(826, 518, 461, 466);     //826
+//y_axis_tris.add_triangle(827, 517, 463, 461);     //827
+//y_axis_tris.add_triangle(828, 475, 522, 521);     //828
+//y_axis_tris.add_triangle(829, 467, 473, 474);     //829
+//y_axis_tris.add_triangle(830, 459, 460, 521);     //830
+//y_axis_tris.add_triangle(831, 466, 467, 460);     //831
+//y_axis_tris.add_triangle(832, 459, 520, 524);     //832
+//y_axis_tris.add_triangle(833, 450, 449, 454);     //833
+//y_axis_tris.add_triangle(834, 449, 458, 457);     //834
+//y_axis_tris.add_triangle(835, 507, 506, 449);     //835
+//y_axis_tris.add_triangle(836, 506, 505, 458);     //836
+//y_axis_tris.add_triangle(837, 448, 450, 453);     //837
+//y_axis_tris.add_triangle(838, 508, 507, 450);     //838
+//y_axis_tris.add_triangle(839, 495, 447, 451);     //839
+//y_axis_tris.add_triangle(840, 447, 448, 452);     //840
+//y_axis_tris.add_triangle(841, 510, 509, 447);     //841
+//y_axis_tris.add_triangle(842, 509, 508, 448);     //842
+//y_axis_tris.add_triangle(843, 446, 444, 508);     //843
+//y_axis_tris.add_triangle(844, 444, 455, 507);     //844
+//y_axis_tris.add_triangle(845, 443, 445, 453);     //845
+//y_axis_tris.add_triangle(846, 444, 446, 445);     //846
+//y_axis_tris.add_triangle(847, 456, 443, 454);     //847
+//y_axis_tris.add_triangle(848, 455, 444, 443);     //848
+//y_axis_tris.add_triangle(849, 492, 442, 511);     //849
+//y_axis_tris.add_triangle(850, 442, 441, 510);     //850
+//y_axis_tris.add_triangle(851, 441, 446, 509);     //851
+//y_axis_tris.add_triangle(852, 440, 493, 494);     //852
+//y_axis_tris.add_triangle(853, 442, 492, 493);     //853
+//y_axis_tris.add_triangle(854, 445, 439, 452);     //854
+//y_axis_tris.add_triangle(855, 439, 440, 451);     //855
+//y_axis_tris.add_triangle(856, 446, 441, 439);     //856
+//y_axis_tris.add_triangle(857, 441, 442, 440);     //857
+//y_axis_tris.add_triangle(858, 433, 438, 437);     //858
+//y_axis_tris.add_triangle(859, 504, 503, 438);     //859
+//y_axis_tris.add_triangle(860, 458, 433, 434);     //860
+//y_axis_tris.add_triangle(861, 505, 504, 433);     //861
+//y_axis_tris.add_triangle(862, 436, 432, 434);     //862
+//y_axis_tris.add_triangle(863, 432, 456, 457);     //863
+//y_axis_tris.add_triangle(864, 431, 435, 505);     //864
+//y_axis_tris.add_triangle(865, 432, 436, 435);     //865
+//y_axis_tris.add_triangle(866, 455, 431, 506);     //866
+//y_axis_tris.add_triangle(867, 456, 432, 431);     //867
+//y_axis_tris.add_triangle(868, 426, 438, 503);     //868
+//y_axis_tris.add_triangle(869, 429, 426, 427);     //869
+//y_axis_tris.add_triangle(870, 428, 437, 438);     //870
+//y_axis_tris.add_triangle(871, 425, 501, 500);     //871
+//y_axis_tris.add_triangle(872, 427, 502, 501);     //872
+//y_axis_tris.add_triangle(873, 425, 499, 498);     //873
+//y_axis_tris.add_triangle(874, 424, 422, 428);     //874
+//y_axis_tris.add_triangle(875, 422, 436, 437);     //875
+//y_axis_tris.add_triangle(876, 421, 423, 503);     //876
+//y_axis_tris.add_triangle(877, 422, 424, 423);     //877
+//y_axis_tris.add_triangle(878, 435, 421, 504);     //878
+//y_axis_tris.add_triangle(879, 436, 422, 421);     //879
+//y_axis_tris.add_triangle(880, 497, 420, 430);     //880
+//y_axis_tris.add_triangle(881, 420, 424, 429);     //881
+//y_axis_tris.add_triangle(882, 419, 423, 424);     //882
+//y_axis_tris.add_triangle(883, 502, 503, 423);     //883
+//y_axis_tris.add_triangle(884, 418, 420, 497);     //884
+//y_axis_tris.add_triangle(885, 500, 501, 418);     //885
+//y_axis_tris.add_triangle(886, 501, 502, 419);     //886
+//y_axis_tris.add_triangle(887, 418, 501, 419);     //887
+//y_axis_tris.add_triangle(888, 496, 500, 418);     //888
+//y_axis_tris.add_triangle(889, 418, 419, 420);     //889
+//y_axis_tris.add_triangle(890, 496, 418, 497);     //890
+//y_axis_tris.add_triangle(891, 419, 502, 423);     //891
+//y_axis_tris.add_triangle(892, 420, 419, 424);     //892
+//y_axis_tris.add_triangle(893, 430, 420, 429);     //893
+//y_axis_tris.add_triangle(894, 498, 497, 430);     //894
+//y_axis_tris.add_triangle(895, 435, 436, 421);     //895
+//y_axis_tris.add_triangle(896, 505, 435, 504);     //896
+//y_axis_tris.add_triangle(897, 421, 422, 423);     //897
+//y_axis_tris.add_triangle(898, 504, 421, 503);     //898
+//y_axis_tris.add_triangle(899, 428, 422, 437);     //899
+//y_axis_tris.add_triangle(900, 429, 424, 428);     //900
+//y_axis_tris.add_triangle(901, 427, 425, 430);     //901
+//y_axis_tris.add_triangle(902, 430, 425, 498);     //902
+//y_axis_tris.add_triangle(903, 501, 425, 427);     //903
+//y_axis_tris.add_triangle(904, 500, 499, 425);     //904
+//y_axis_tris.add_triangle(905, 429, 428, 426);     //905
+//y_axis_tris.add_triangle(906, 426, 428, 438);     //906
+//y_axis_tris.add_triangle(907, 427, 430, 429);     //907
+//y_axis_tris.add_triangle(908, 427, 426, 502);     //908
+//y_axis_tris.add_triangle(909, 502, 426, 503);     //909
+//y_axis_tris.add_triangle(910, 455, 456, 431);     //910
+//y_axis_tris.add_triangle(911, 507, 455, 506);     //911
+//y_axis_tris.add_triangle(912, 431, 432, 435);     //912
+//y_axis_tris.add_triangle(913, 506, 431, 505);     //913
+//y_axis_tris.add_triangle(914, 434, 432, 457);     //914
+//y_axis_tris.add_triangle(915, 437, 436, 434);     //915
+//y_axis_tris.add_triangle(916, 458, 505, 433);     //916
+//y_axis_tris.add_triangle(917, 457, 458, 434);     //917
+//y_axis_tris.add_triangle(918, 433, 504, 438);     //918
+//y_axis_tris.add_triangle(919, 434, 433, 437);     //919
+//y_axis_tris.add_triangle(920, 439, 441, 440);     //920
+//y_axis_tris.add_triangle(921, 445, 446, 439);     //921
+//y_axis_tris.add_triangle(922, 452, 439, 451);     //922
+//y_axis_tris.add_triangle(923, 453, 445, 452);     //923
+//y_axis_tris.add_triangle(924, 440, 442, 493);     //924
+//y_axis_tris.add_triangle(925, 451, 440, 494);     //925
+//y_axis_tris.add_triangle(926, 510, 441, 509);     //926
+//y_axis_tris.add_triangle(927, 511, 442, 510);     //927
+//y_axis_tris.add_triangle(928, 512, 492, 511);     //928
+//y_axis_tris.add_triangle(929, 456, 455, 443);     //929
+//y_axis_tris.add_triangle(930, 457, 456, 454);     //930
+//y_axis_tris.add_triangle(931, 443, 444, 445);     //931
+//y_axis_tris.add_triangle(932, 454, 443, 453);     //932
+//y_axis_tris.add_triangle(933, 508, 444, 507);     //933
+//y_axis_tris.add_triangle(934, 509, 446, 508);     //934
+//y_axis_tris.add_triangle(935, 447, 509, 448);     //935
+//y_axis_tris.add_triangle(936, 495, 510, 447);     //936
+//y_axis_tris.add_triangle(937, 451, 447, 452);     //937
+//y_axis_tris.add_triangle(938, 494, 495, 451);     //938
+//y_axis_tris.add_triangle(939, 448, 508, 450);     //939
+//y_axis_tris.add_triangle(940, 452, 448, 453);     //940
+//y_axis_tris.add_triangle(941, 449, 506, 458);     //941
+//y_axis_tris.add_triangle(942, 450, 507, 449);     //942
+//y_axis_tris.add_triangle(943, 454, 449, 457);     //943
+//y_axis_tris.add_triangle(944, 453, 450, 454);     //944
+//y_axis_tris.add_triangle(945, 466, 459, 519);     //945
+//y_axis_tris.add_triangle(946, 519, 459, 524);     //946
+//y_axis_tris.add_triangle(947, 460, 459, 466);     //947
+//y_axis_tris.add_triangle(948, 521, 520, 459);     //948
+//y_axis_tris.add_triangle(949, 474, 460, 467);     //949
+//y_axis_tris.add_triangle(950, 474, 475, 460);     //950
+//y_axis_tris.add_triangle(951, 460, 475, 521);     //951
+//y_axis_tris.add_triangle(952, 461, 518, 517);     //952
+//y_axis_tris.add_triangle(953, 466, 519, 518);     //953
+//y_axis_tris.add_triangle(954, 465, 461, 463);     //954
+//y_axis_tris.add_triangle(955, 467, 466, 461);     //955
+//y_axis_tris.add_triangle(956, 516, 515, 462);     //956
+//y_axis_tris.add_triangle(957, 462, 515, 488);     //957
+//y_axis_tris.add_triangle(958, 463, 517, 516);     //958
+//y_axis_tris.add_triangle(959, 463, 462, 464);     //959
+//y_axis_tris.add_triangle(960, 464, 462, 489);     //960
+//y_axis_tris.add_triangle(961, 465, 464, 472);     //961
+//y_axis_tris.add_triangle(962, 472, 464, 490);     //962
+//y_axis_tris.add_triangle(963, 473, 467, 465);     //963
+//y_axis_tris.add_triangle(964, 468, 475, 469);     //964
+//y_axis_tris.add_triangle(965, 523, 522, 468);     //965
+//y_axis_tris.add_triangle(966, 468, 469, 519);     //966
+//y_axis_tris.add_triangle(967, 523, 468, 524);     //967
+//y_axis_tris.add_triangle(968, 469, 474, 471);     //968
+//y_axis_tris.add_triangle(969, 519, 469, 518);     //969
+//y_axis_tris.add_triangle(970, 470, 472, 491);     //970
+//y_axis_tris.add_triangle(971, 471, 473, 470);     //971
+//y_axis_tris.add_triangle(972, 517, 470, 516);     //972
+//y_axis_tris.add_triangle(973, 518, 471, 517);     //973
+//y_axis_tris.add_triangle(974, 480, 481, 476);     //974
+//y_axis_tris.add_triangle(975, 486, 480, 485);     //975
+//y_axis_tris.add_triangle(976, 476, 477, 494);     //976
+//y_axis_tris.add_triangle(977, 485, 476, 493);     //977
+//y_axis_tris.add_triangle(978, 511, 477, 512);     //978
+//y_axis_tris.add_triangle(979, 510, 495, 511);     //979
+//y_axis_tris.add_triangle(980, 489, 488, 478);     //980
+//y_axis_tris.add_triangle(981, 490, 489, 487);     //981
+//y_axis_tris.add_triangle(982, 478, 479, 480);     //982
+//y_axis_tris.add_triangle(983, 487, 478, 486);     //983
+//y_axis_tris.add_triangle(984, 513, 479, 514);     //984
+//y_axis_tris.add_triangle(985, 512, 481, 513);     //985
+//y_axis_tris.add_triangle(986, 482, 513, 484);     //986
+//y_axis_tris.add_triangle(987, 492, 512, 482);     //987
+//y_axis_tris.add_triangle(988, 485, 482, 486);     //988
+//y_axis_tris.add_triangle(989, 493, 492, 485);     //989
+//y_axis_tris.add_triangle(990, 483, 515, 491);     //990
+//y_axis_tris.add_triangle(991, 484, 514, 483);     //991
+//y_axis_tris.add_triangle(992, 487, 483, 490);     //992
+//y_axis_tris.add_triangle(993, 486, 484, 487);     //993
+//                                                  //_________________________________________________________________
+
+//// Z axis
+//z_axis_nodes = new nodes_store();
+//z_axis_nodes.add_point(525, -0.00822, 0.31033, 12.73585, z_axis_clr);     //525
+//z_axis_nodes.add_point(526, 0.06964, -0.07719, 13.51016, z_axis_clr);     //526
+//z_axis_nodes.add_point(527, 0.07180, -0.14509, 13.29293, z_axis_clr);     //527
+//z_axis_nodes.add_point(528, -0.04389, -0.11381, 13.44256, z_axis_clr);     //528
+//z_axis_nodes.add_point(529, 0.09254, -0.21092, 13.03628, z_axis_clr);     //529
+//z_axis_nodes.add_point(530, 0.16998, -0.10814, 13.14450, z_axis_clr);     //530
+//z_axis_nodes.add_point(531, -0.09521, -0.01375, 13.53924, z_axis_clr);     //531
+//z_axis_nodes.add_point(532, -0.06443, -0.18373, 13.16987, z_axis_clr);     //532
+//z_axis_nodes.add_point(533, -0.11107, 0.08179, 13.38273, z_axis_clr);     //533
+//z_axis_nodes.add_point(534, -0.23015, 0.00583, 13.03667, z_axis_clr);     //534
+//z_axis_nodes.add_point(535, -0.16638, -0.03831, 13.25976, z_axis_clr);     //535
+//z_axis_nodes.add_point(536, -0.18831, -0.14375, 13.01161, z_axis_clr);     //536
+//z_axis_nodes.add_point(537, 0.30557, -0.17014, 12.58845, z_axis_clr);     //537
+//z_axis_nodes.add_point(538, 0.16644, -0.32958, 12.51540, z_axis_clr);     //538
+//z_axis_nodes.add_point(539, -0.25513, -0.26414, 12.52287, z_axis_clr);     //539
+//z_axis_nodes.add_point(540, -0.05312, -0.34528, 12.58998, z_axis_clr);     //540
+//z_axis_nodes.add_point(541, -0.27015, -0.07227, 12.85133, z_axis_clr);     //541
+//z_axis_nodes.add_point(542, -0.21337, -0.21768, 12.75697, z_axis_clr);     //542
+//z_axis_nodes.add_point(543, -0.05518, -0.26178, 12.89675, z_axis_clr);     //543
+//z_axis_nodes.add_point(544, 0.12934, -0.27474, 12.76128, z_axis_clr);     //544
+//z_axis_nodes.add_point(545, 0.22732, -0.13883, 12.90114, z_axis_clr);     //545
+//z_axis_nodes.add_point(546, -0.00665, 0.15723, 13.30986, z_axis_clr);     //546
+//z_axis_nodes.add_point(547, -0.00951, 0.23746, 13.00882, z_axis_clr);     //547
+//z_axis_nodes.add_point(548, -0.16769, 0.31823, 12.55109, z_axis_clr);     //548
+//z_axis_nodes.add_point(549, -0.31321, 0.16606, 12.57058, z_axis_clr);     //549
+//z_axis_nodes.add_point(550, -0.16912, 0.23426, 12.81652, z_axis_clr);     //550
+//z_axis_nodes.add_point(551, -0.15608, 0.14162, 13.10968, z_axis_clr);     //551
+//z_axis_nodes.add_point(552, -0.27072, 0.08433, 12.83670, z_axis_clr);     //552
+//z_axis_nodes.add_point(553, -0.34168, -0.06882, 12.59297, z_axis_clr);     //553
+//z_axis_nodes.add_point(554, 0.45703, -0.20534, 12.02109, z_axis_clr);     //554
+//z_axis_nodes.add_point(555, 0.24276, -0.43536, 12.03077, z_axis_clr);     //555
+//z_axis_nodes.add_point(556, 0.40779, -0.39983, 11.75835, z_axis_clr);     //556
+//z_axis_nodes.add_point(557, -0.33686, -0.36699, 12.03191, z_axis_clr);     //557
+//z_axis_nodes.add_point(558, -0.25933, -0.50799, 11.76118, z_axis_clr);     //558
+//z_axis_nodes.add_point(559, -0.05969, -0.49454, 12.03200, z_axis_clr);     //559
+//z_axis_nodes.add_point(560, 0.08570, -0.56382, 11.76140, z_axis_clr);     //560
+//z_axis_nodes.add_point(561, 0.67741, -0.24861, 11.19405, z_axis_clr);     //561
+//z_axis_nodes.add_point(562, 0.43550, -0.57183, 11.20456, z_axis_clr);     //562
+//z_axis_nodes.add_point(563, 0.02812, -0.71751, 11.20728, z_axis_clr);     //563
+//z_axis_nodes.add_point(564, -0.13903, -0.62786, 11.48850, z_axis_clr);     //564
+//z_axis_nodes.add_point(565, 0.25111, -0.59229, 11.48753, z_axis_clr);     //565
+//z_axis_nodes.add_point(566, 0.55089, -0.33651, 11.47922, z_axis_clr);     //566
+//z_axis_nodes.add_point(567, -0.45485, 0.20292, 12.03228, z_axis_clr);     //567
+//z_axis_nodes.add_point(568, -0.56383, 0.08415, 11.76221, z_axis_clr);     //568
+//z_axis_nodes.add_point(569, -0.67002, -0.25716, 11.20870, z_axis_clr);     //569
+//z_axis_nodes.add_point(570, -0.63885, -0.07034, 11.48984, z_axis_clr);     //570
+//z_axis_nodes.add_point(571, -0.48761, -0.10173, 12.03209, z_axis_clr);     //571
+//z_axis_nodes.add_point(572, -0.50635, -0.26234, 11.76145, z_axis_clr);     //572
+//z_axis_nodes.add_point(573, -0.47743, -0.43064, 11.48892, z_axis_clr);     //573
+//z_axis_nodes.add_point(574, -0.39394, -0.60014, 11.20795, z_axis_clr);     //574
+//z_axis_nodes.add_point(575, -0.31907, 0.28320, 12.30017, z_axis_clr);     //575
+//z_axis_nodes.add_point(576, -0.42325, 0.04533, 12.30373, z_axis_clr);     //576
+//z_axis_nodes.add_point(577, -0.37044, -0.21149, 12.30041, z_axis_clr);     //577
+//z_axis_nodes.add_point(578, -0.17865, -0.38706, 12.30137, z_axis_clr);     //578
+//z_axis_nodes.add_point(579, 0.08244, -0.41889, 12.29901, z_axis_clr);     //579
+//z_axis_nodes.add_point(580, 0.31460, -0.29025, 12.29487, z_axis_clr);     //580
+//z_axis_nodes.add_point(581, 0.07867, 0.07869, 13.48273, z_axis_clr);     //581
+//z_axis_nodes.add_point(582, 0.13874, 0.14596, 13.14485, z_axis_clr);     //582
+//z_axis_nodes.add_point(583, 0.28185, 0.16983, 12.66600, z_axis_clr);     //583
+//z_axis_nodes.add_point(584, 0.16595, 0.31269, 12.57250, z_axis_clr);     //584
+//z_axis_nodes.add_point(585, 0.23232, 0.12883, 12.90382, z_axis_clr);     //585
+//z_axis_nodes.add_point(586, 0.24952, 0.50525, 11.78687, z_axis_clr);     //586
+//z_axis_nodes.add_point(587, 0.46921, 0.27370, 11.86298, z_axis_clr);     //587
+//z_axis_nodes.add_point(588, 0.29903, 0.38790, 12.06332, z_axis_clr);     //588
+//z_axis_nodes.add_point(589, 0.43659, 0.19780, 12.10258, z_axis_clr);     //589
+//z_axis_nodes.add_point(590, -0.09175, 0.56167, 11.76583, z_axis_clr);     //590
+//z_axis_nodes.add_point(591, 0.03835, 0.49541, 12.03667, z_axis_clr);     //591
+//z_axis_nodes.add_point(592, 0.66997, 0.26074, 11.20404, z_axis_clr);     //592
+//z_axis_nodes.add_point(593, 0.40247, 0.59171, 11.21647, z_axis_clr);     //593
+//z_axis_nodes.add_point(594, -0.44841, 0.55991, 11.20999, z_axis_clr);     //594
+//z_axis_nodes.add_point(595, -0.02899, 0.71634, 11.21153, z_axis_clr);     //595
+//z_axis_nodes.add_point(596, 0.50975, 0.36951, 11.53904, z_axis_clr);     //596
+//z_axis_nodes.add_point(597, 0.14508, 0.62290, 11.50162, z_axis_clr);     //597
+//z_axis_nodes.add_point(598, -0.25728, 0.58825, 11.49229, z_axis_clr);     //598
+//z_axis_nodes.add_point(599, 0.33729, 0.23547, 12.35743, z_axis_clr);     //599
+//z_axis_nodes.add_point(600, 0.13452, 0.40338, 12.30543, z_axis_clr);     //600
+//z_axis_nodes.add_point(601, 0.14435, 0.24336, 12.83892, z_axis_clr);     //601
+//z_axis_nodes.add_point(602, 0.00416, 0.37150, 12.50679, z_axis_clr);     //602
+//z_axis_nodes.add_point(603, -0.10620, 0.41481, 12.29430, z_axis_clr);     //603
+//z_axis_nodes.add_point(604, -0.25150, 0.42999, 12.03197, z_axis_clr);     //604
+//z_axis_nodes.add_point(605, -0.40527, 0.40068, 11.76286, z_axis_clr);     //605
+//z_axis_nodes.add_point(606, -0.55689, 0.32033, 11.49081, z_axis_clr);     //606
+//z_axis_nodes.add_point(607, -0.69283, 0.18644, 11.20947, z_axis_clr);     //607
+//z_axis_nodes.add_point(608, 0.72667, 0.00000, 11.17500, z_axis_clr);     //608
+//z_axis_nodes.add_point(609, 0.65333, 0.00000, 11.45000, z_axis_clr);     //609
+//z_axis_nodes.add_point(610, 0.58000, 0.00000, 11.72500, z_axis_clr);     //610
+//z_axis_nodes.add_point(611, 0.50667, 0.00000, 12.00000, z_axis_clr);     //611
+//z_axis_nodes.add_point(612, 0.43333, 0.00000, 12.27500, z_axis_clr);     //612
+//z_axis_nodes.add_point(613, 0.36000, 0.00000, 12.55000, z_axis_clr);     //613
+//z_axis_nodes.add_point(614, 0.28667, 0.00000, 12.82500, z_axis_clr);     //614
+//z_axis_nodes.add_point(615, 0.21333, 0.00000, 13.10000, z_axis_clr);     //615
+//z_axis_nodes.add_point(616, 0.14000, 0.00000, 13.37500, z_axis_clr);     //616
+//z_axis_nodes.add_point(617, 0.05393, 0.03919, 13.65000, z_axis_clr);     //617
+//z_axis_nodes.add_point(618, 0.02060, 0.06340, 13.65000, z_axis_clr);     //618
+//z_axis_nodes.add_point(619, -0.02060, 0.06340, 13.65000, z_axis_clr);     //619
+//z_axis_nodes.add_point(620, -0.05393, 0.03919, 13.65000, z_axis_clr);     //620
+//z_axis_nodes.add_point(621, -0.06667, 0.00000, 13.65000, z_axis_clr);     //621
+//z_axis_nodes.add_point(622, -0.05393, -0.03919, 13.65000, z_axis_clr);     //622
+//z_axis_nodes.add_point(623, -0.02060, -0.06340, 13.65000, z_axis_clr);     //623
+//z_axis_nodes.add_point(624, 0.02060, -0.06340, 13.65000, z_axis_clr);     //624
+//z_axis_nodes.add_point(625, 0.05393, -0.03919, 13.65000, z_axis_clr);     //625
+//z_axis_nodes.add_point(626, 0.06667, 0.00000, 13.65000, z_axis_clr);     //626
+//z_axis_nodes.add_point(627, 0.12351, 0.38033, 10.89995, z_axis_clr);     //627
+//z_axis_nodes.add_point(628, -0.32350, 0.23497, 10.89993, z_axis_clr);     //628
+//z_axis_nodes.add_point(629, -0.32356, -0.23517, 10.89987, z_axis_clr);     //629
+//z_axis_nodes.add_point(630, 0.12360, -0.38030, 10.89985, z_axis_clr);     //630
+//z_axis_nodes.add_point(631, 0.40000, 0.00000, 10.89990, z_axis_clr);     //631
+//z_axis_nodes.add_point(632, 0.64218, -0.46624, 10.89985, z_axis_clr);     //632
+//z_axis_nodes.add_point(633, 0.24559, -0.75696, 10.89981, z_axis_clr);     //633
+//z_axis_nodes.add_point(634, -0.24562, -0.75672, 10.89981, z_axis_clr);     //634
+//z_axis_nodes.add_point(635, -0.64622, -0.46966, 10.89984, z_axis_clr);     //635
+//z_axis_nodes.add_point(636, -0.79322, -0.00023, 10.89990, z_axis_clr);     //636
+//z_axis_nodes.add_point(637, -0.64551, 0.46872, 10.89996, z_axis_clr);     //637
+//z_axis_nodes.add_point(638, -0.24598, 0.75663, 10.89999, z_axis_clr);     //638
+//z_axis_nodes.add_point(639, 0.24534, 0.75548, 10.90000, z_axis_clr);     //639
+//z_axis_nodes.add_point(640, 0.64512, 0.46899, 10.89996, z_axis_clr);     //640
+//z_axis_nodes.add_point(641, 0.80006, 0.00000, 10.90002, z_axis_clr);     //641
+//z_axis_nodes.add_point(642, 0.10435, 0.38615, 1.25211, z_axis_clr);     //642
+//z_axis_nodes.add_point(643, 0.11950, 0.38173, 1.71604, z_axis_clr);     //643
+//z_axis_nodes.add_point(644, -0.32423, 0.23425, 1.48323, z_axis_clr);     //644
+//z_axis_nodes.add_point(645, 0.12438, 0.38017, 2.70428, z_axis_clr);     //645
+//z_axis_nodes.add_point(646, -0.32290, 0.23608, 2.50849, z_axis_clr);     //646
+//z_axis_nodes.add_point(647, 0.12399, 0.38030, 2.20713, z_axis_clr);     //647
+//z_axis_nodes.add_point(648, -0.32285, 0.23615, 2.00449, z_axis_clr);     //648
+//z_axis_nodes.add_point(649, 0.13433, -0.37677, 1.21821, z_axis_clr);     //649
+//z_axis_nodes.add_point(650, 0.12471, -0.38006, 2.11907, z_axis_clr);     //650
+//z_axis_nodes.add_point(651, 0.12336, -0.38050, 1.64456, z_axis_clr);     //651
+//z_axis_nodes.add_point(652, -0.32437, -0.23407, 2.31470, z_axis_clr);     //652
+//z_axis_nodes.add_point(653, -0.32828, -0.22854, 1.82259, z_axis_clr);     //653
+//z_axis_nodes.add_point(654, -0.33939, -0.21169, 1.33673, z_axis_clr);     //654
+//z_axis_nodes.add_point(655, 0.12368, 0.38040, 3.70051, z_axis_clr);     //655
+//z_axis_nodes.add_point(656, -0.32364, 0.23506, 3.50159, z_axis_clr);     //656
+//z_axis_nodes.add_point(657, 0.12462, -0.38009, 3.10323, z_axis_clr);     //657
+//z_axis_nodes.add_point(658, -0.32332, -0.23551, 3.30280, z_axis_clr);     //658
+//z_axis_nodes.add_point(659, 0.12392, 0.38032, 3.20169, z_axis_clr);     //659
+//z_axis_nodes.add_point(660, -0.32352, 0.23524, 3.00452, z_axis_clr);     //660
+//z_axis_nodes.add_point(661, -0.32345, -0.23532, 2.80728, z_axis_clr);     //661
+//z_axis_nodes.add_point(662, 0.12507, -0.37995, 2.60863, z_axis_clr);     //662
+//z_axis_nodes.add_point(663, -0.32363, 0.23509, 5.50000, z_axis_clr);     //663
+//z_axis_nodes.add_point(664, -0.32363, 0.23509, 6.00000, z_axis_clr);     //664
+//z_axis_nodes.add_point(665, 0.12360, 0.38043, 5.70000, z_axis_clr);     //665
+//z_axis_nodes.add_point(666, 0.12360, 0.38042, 6.20000, z_axis_clr);     //666
+//z_axis_nodes.add_point(667, -0.32363, 0.23508, 4.50000, z_axis_clr);     //667
+//z_axis_nodes.add_point(668, 0.12360, 0.38043, 4.70000, z_axis_clr);     //668
+//z_axis_nodes.add_point(669, -0.32363, 0.23508, 5.00000, z_axis_clr);     //669
+//z_axis_nodes.add_point(670, 0.12360, 0.38043, 5.20000, z_axis_clr);     //670
+//z_axis_nodes.add_point(671, 0.12374, -0.38038, 5.60000, z_axis_clr);     //671
+//z_axis_nodes.add_point(672, 0.12376, -0.38037, 5.10000, z_axis_clr);     //672
+//z_axis_nodes.add_point(673, 0.12378, -0.38037, 4.10000, z_axis_clr);     //673
+//z_axis_nodes.add_point(674, 0.12377, -0.38037, 4.60000, z_axis_clr);     //674
+//z_axis_nodes.add_point(675, -0.32357, -0.23516, 5.80000, z_axis_clr);     //675
+//z_axis_nodes.add_point(676, -0.32357, -0.23516, 5.30000, z_axis_clr);     //676
+//z_axis_nodes.add_point(677, -0.32357, -0.23517, 4.80000, z_axis_clr);     //677
+//z_axis_nodes.add_point(678, -0.32356, -0.23517, 4.30000, z_axis_clr);     //678
+//z_axis_nodes.add_point(679, 0.12360, 0.38043, 4.20000, z_axis_clr);     //679
+//z_axis_nodes.add_point(680, -0.32363, 0.23508, 4.00000, z_axis_clr);     //680
+//z_axis_nodes.add_point(681, -0.32348, -0.23528, 3.80060, z_axis_clr);     //681
+//z_axis_nodes.add_point(682, 0.12397, -0.38031, 3.60078, z_axis_clr);     //682
+//z_axis_nodes.add_point(683, 0.10374, -0.38631, 10.54642, z_axis_clr);     //683
+//z_axis_nodes.add_point(684, -0.32437, -0.23406, 10.31426, z_axis_clr);     //684
+//z_axis_nodes.add_point(685, 0.12364, -0.38041, 9.59032, z_axis_clr);     //685
+//z_axis_nodes.add_point(686, 0.12461, -0.38010, 8.59704, z_axis_clr);     //686
+//z_axis_nodes.add_point(687, 0.12458, -0.38011, 9.09416, z_axis_clr);     //687
+//z_axis_nodes.add_point(688, -0.32304, -0.23589, 8.79205, z_axis_clr);     //688
+//z_axis_nodes.add_point(689, -0.32302, -0.23593, 9.28729, z_axis_clr);     //689
+//z_axis_nodes.add_point(690, 0.11915, -0.38184, 10.08155, z_axis_clr);     //690
+//z_axis_nodes.add_point(691, -0.32318, -0.23570, 9.79177, z_axis_clr);     //691
+//z_axis_nodes.add_point(692, 0.13394, 0.37691, 10.58143, z_axis_clr);     //692
+//z_axis_nodes.add_point(693, 0.12292, 0.38064, 10.15422, z_axis_clr);     //693
+//z_axis_nodes.add_point(694, 0.12461, 0.38009, 9.18811, z_axis_clr);     //694
+//z_axis_nodes.add_point(695, 0.12437, 0.38017, 9.67883, z_axis_clr);     //695
+//z_axis_nodes.add_point(696, -0.32362, 0.23510, 8.98773, z_axis_clr);     //696
+//z_axis_nodes.add_point(697, -0.32433, 0.23412, 9.48069, z_axis_clr);     //697
+//z_axis_nodes.add_point(698, -0.32825, 0.22859, 9.97429, z_axis_clr);     //698
+//z_axis_nodes.add_point(699, -0.33958, 0.21140, 10.46194, z_axis_clr);     //699
+//z_axis_nodes.add_point(700, -0.32358, -0.23515, 6.80000, z_axis_clr);     //700
+//z_axis_nodes.add_point(701, 0.12372, -0.38039, 6.60000, z_axis_clr);     //701
+//z_axis_nodes.add_point(702, -0.32355, -0.23519, 7.79913, z_axis_clr);     //702
+//z_axis_nodes.add_point(703, 0.12369, -0.38039, 7.60000, z_axis_clr);     //703
+//z_axis_nodes.add_point(704, -0.32358, -0.23515, 7.30000, z_axis_clr);     //704
+//z_axis_nodes.add_point(705, 0.12370, -0.38039, 7.10000, z_axis_clr);     //705
+//z_axis_nodes.add_point(706, 0.12360, 0.38042, 7.20000, z_axis_clr);     //706
+//z_axis_nodes.add_point(707, 0.12426, 0.38021, 8.19780, z_axis_clr);     //707
+//z_axis_nodes.add_point(708, 0.12375, 0.38038, 7.69948, z_axis_clr);     //708
+//z_axis_nodes.add_point(709, -0.32362, 0.23509, 7.00000, z_axis_clr);     //709
+//z_axis_nodes.add_point(710, -0.32362, 0.23510, 7.50000, z_axis_clr);     //710
+//z_axis_nodes.add_point(711, -0.32347, 0.23531, 7.99808, z_axis_clr);     //711
+//z_axis_nodes.add_point(712, 0.12381, -0.38036, 8.09932, z_axis_clr);     //712
+//z_axis_nodes.add_point(713, -0.32335, -0.23546, 8.29661, z_axis_clr);     //713
+//z_axis_nodes.add_point(714, -0.32341, 0.23539, 8.49397, z_axis_clr);     //714
+//z_axis_nodes.add_point(715, 0.12487, 0.38001, 8.69409, z_axis_clr);     //715
+//z_axis_nodes.add_point(716, 0.12360, 0.38042, 6.70000, z_axis_clr);     //716
+//z_axis_nodes.add_point(717, -0.32362, 0.23509, 6.50000, z_axis_clr);     //717
+//z_axis_nodes.add_point(718, -0.32358, -0.23515, 6.30000, z_axis_clr);     //718
+//z_axis_nodes.add_point(719, 0.12373, -0.38038, 6.10000, z_axis_clr);     //719
+//z_axis_nodes.add_point(720, 0.12355, 0.38005, 0.90000, z_axis_clr);     //720
+//z_axis_nodes.add_point(721, -0.32346, 0.23504, 0.90000, z_axis_clr);     //721
+//z_axis_nodes.add_point(722, -0.32356, -0.23491, 0.90000, z_axis_clr);     //722
+//z_axis_nodes.add_point(723, 0.12324, -0.38018, 0.90000, z_axis_clr);     //723
+//z_axis_nodes.add_point(724, 0.40001, 0.00000, 0.90000, z_axis_clr);     //724
+//z_axis_nodes.add_point(725, 0.40000, 0.00000, 1.40000, z_axis_clr);     //725
+//z_axis_nodes.add_point(726, 0.40000, 0.00000, 1.90000, z_axis_clr);     //726
+//z_axis_nodes.add_point(727, 0.40000, 0.00000, 2.40000, z_axis_clr);     //727
+//z_axis_nodes.add_point(728, 0.40000, 0.00000, 2.90000, z_axis_clr);     //728
+//z_axis_nodes.add_point(729, 0.40000, 0.00000, 3.40000, z_axis_clr);     //729
+//z_axis_nodes.add_point(730, 0.40000, 0.00000, 3.90000, z_axis_clr);     //730
+//z_axis_nodes.add_point(731, 0.40000, 0.00000, 4.40000, z_axis_clr);     //731
+//z_axis_nodes.add_point(732, 0.40000, 0.00000, 4.90000, z_axis_clr);     //732
+//z_axis_nodes.add_point(733, 0.40000, 0.00000, 5.40000, z_axis_clr);     //733
+//z_axis_nodes.add_point(734, 0.40000, 0.00000, 5.90000, z_axis_clr);     //734
+//z_axis_nodes.add_point(735, 0.40000, 0.00000, 6.40000, z_axis_clr);     //735
+//z_axis_nodes.add_point(736, 0.40000, 0.00000, 6.90000, z_axis_clr);     //736
+//z_axis_nodes.add_point(737, 0.40000, 0.00000, 7.40000, z_axis_clr);     //737
+//z_axis_nodes.add_point(738, 0.40000, 0.00000, 7.90000, z_axis_clr);     //738
+//z_axis_nodes.add_point(739, 0.40000, 0.00000, 8.40000, z_axis_clr);     //739
+//z_axis_nodes.add_point(740, 0.40000, 0.00000, 8.90000, z_axis_clr);     //740
+//z_axis_nodes.add_point(741, 0.40000, 0.00000, 9.40000, z_axis_clr);     //741
+//z_axis_nodes.add_point(742, 0.40000, 0.00000, 9.90000, z_axis_clr);     //742
+//z_axis_nodes.add_point(743, 0.40000, 0.00000, 10.40000, z_axis_clr);     //743
+//z_axis_nodes.add_point(744, 0.12361, -0.38042, 10.90000, z_axis_clr);     //744
+//z_axis_nodes.add_point(745, -0.32361, -0.23511, 10.90000, z_axis_clr);     //745
+//z_axis_nodes.add_point(746, -0.32361, 0.23511, 10.90000, z_axis_clr);     //746
+//z_axis_nodes.add_point(747, 0.12361, 0.38042, 10.90000, z_axis_clr);     //747
+//z_axis_nodes.add_point(748, 0.40000, 0.00000, 10.90000, z_axis_clr);     //748
+
+//z_axis_tris = new tri_elements();
+//z_axis_tris.add_triangle(994, 547, 601, 525);     //994
+//z_axis_tris.add_triangle(995, 584, 525, 601);     //995
+//z_axis_tris.add_triangle(996, 598, 597, 595);     //996
+//z_axis_tris.add_triangle(997, 606, 598, 594);     //997
+//z_axis_tris.add_triangle(998, 594, 595, 638);     //998
+//z_axis_tris.add_triangle(999, 607, 594, 637);     //999
+//z_axis_tris.add_triangle(1000, 593, 595, 597);     //1000
+//z_axis_tris.add_triangle(1001, 639, 638, 595);     //1001
+//z_axis_tris.add_triangle(1002, 592, 596, 609);     //1002
+//z_axis_tris.add_triangle(1003, 592, 608, 641);     //1003
+//z_axis_tris.add_triangle(1004, 593, 592, 640);     //1004
+//z_axis_tris.add_triangle(1005, 591, 604, 603);     //1005
+//z_axis_tris.add_triangle(1006, 590, 605, 604);     //1006
+//z_axis_tris.add_triangle(1007, 598, 606, 605);     //1007
+//z_axis_tris.add_triangle(1008, 589, 599, 612);     //1008
+//z_axis_tris.add_triangle(1009, 588, 600, 599);     //1009
+//z_axis_tris.add_triangle(1010, 596, 587, 610);     //1010
+//z_axis_tris.add_triangle(1011, 587, 589, 611);     //1011
+//z_axis_tris.add_triangle(1012, 597, 598, 590);     //1012
+//z_axis_tris.add_triangle(1013, 596, 597, 586);     //1013
+//z_axis_tris.add_triangle(1014, 586, 590, 591);     //1014
+//z_axis_tris.add_triangle(1015, 587, 586, 588);     //1015
+//z_axis_tris.add_triangle(1016, 584, 602, 525);     //1016
+//z_axis_tris.add_triangle(1017, 600, 603, 602);     //1017
+//z_axis_tris.add_triangle(1018, 583, 585, 614);     //1018
+//z_axis_tris.add_triangle(1019, 599, 583, 613);     //1019
+//z_axis_tris.add_triangle(1020, 584, 583, 599);     //1020
+//z_axis_tris.add_triangle(1021, 585, 601, 582);     //1021
+//z_axis_tris.add_triangle(1022, 615, 614, 585);     //1022
+//z_axis_tris.add_triangle(1023, 581, 616, 582);     //1023
+//z_axis_tris.add_triangle(1024, 581, 617, 626);     //1024
+//z_axis_tris.add_triangle(1025, 569, 574, 573);     //1025
+//z_axis_tris.add_triangle(1026, 635, 634, 574);     //1026
+//z_axis_tris.add_triangle(1027, 607, 569, 570);     //1027
+//z_axis_tris.add_triangle(1028, 636, 635, 569);     //1028
+//z_axis_tris.add_triangle(1029, 570, 573, 572);     //1029
+//z_axis_tris.add_triangle(1030, 606, 570, 568);     //1030
+//z_axis_tris.add_triangle(1031, 567, 571, 576);     //1031
+//z_axis_tris.add_triangle(1032, 568, 572, 571);     //1032
+//z_axis_tris.add_triangle(1033, 604, 567, 575);     //1033
+//z_axis_tris.add_triangle(1034, 605, 568, 567);     //1034
+//z_axis_tris.add_triangle(1035, 563, 574, 634);     //1035
+//z_axis_tris.add_triangle(1036, 564, 573, 574);     //1036
+//z_axis_tris.add_triangle(1037, 562, 563, 633);     //1037
+//z_axis_tris.add_triangle(1038, 565, 564, 563);     //1038
+//z_axis_tris.add_triangle(1039, 561, 632, 641);     //1039
+//z_axis_tris.add_triangle(1040, 561, 608, 609);     //1040
+//z_axis_tris.add_triangle(1041, 562, 561, 566);     //1041
+//z_axis_tris.add_triangle(1042, 564, 565, 560);     //1042
+//z_axis_tris.add_triangle(1043, 573, 564, 558);     //1043
+//z_axis_tris.add_triangle(1044, 557, 559, 578);     //1044
+//z_axis_tris.add_triangle(1045, 558, 560, 559);     //1045
+//z_axis_tris.add_triangle(1046, 571, 557, 577);     //1046
+//z_axis_tris.add_triangle(1047, 572, 558, 557);     //1047
+//z_axis_tris.add_triangle(1048, 566, 609, 610);     //1048
+//z_axis_tris.add_triangle(1049, 565, 566, 556);     //1049
+//z_axis_tris.add_triangle(1050, 555, 559, 560);     //1050
+//z_axis_tris.add_triangle(1051, 579, 578, 559);     //1051
+//z_axis_tris.add_triangle(1052, 554, 556, 610);     //1052
+//z_axis_tris.add_triangle(1053, 554, 611, 612);     //1053
+//z_axis_tris.add_triangle(1054, 555, 554, 580);     //1054
+//z_axis_tris.add_triangle(1055, 549, 553, 552);     //1055
+//z_axis_tris.add_triangle(1056, 576, 577, 553);     //1056
+//z_axis_tris.add_triangle(1057, 550, 525, 548);     //1057
+//z_axis_tris.add_triangle(1058, 548, 602, 603);     //1058
+//z_axis_tris.add_triangle(1059, 549, 548, 575);     //1059
+//z_axis_tris.add_triangle(1060, 550, 552, 551);     //1060
+//z_axis_tris.add_triangle(1061, 525, 550, 547);     //1061
+//z_axis_tris.add_triangle(1062, 547, 551, 546);     //1062
+//z_axis_tris.add_triangle(1063, 582, 547, 546);     //1063
+//z_axis_tris.add_triangle(1064, 581, 618, 617);     //1064
+//z_axis_tris.add_triangle(1065, 578, 579, 540);     //1065
+//z_axis_tris.add_triangle(1066, 577, 578, 539);     //1066
+//z_axis_tris.add_triangle(1067, 539, 540, 542);     //1067
+//z_axis_tris.add_triangle(1068, 553, 539, 542);     //1068
+//z_axis_tris.add_triangle(1069, 538, 540, 579);     //1069
+//z_axis_tris.add_triangle(1070, 543, 542, 540);     //1070
+//z_axis_tris.add_triangle(1071, 537, 580, 612);     //1071
+//z_axis_tris.add_triangle(1072, 614, 537, 613);     //1072
+//z_axis_tris.add_triangle(1073, 544, 538, 537);     //1073
+//z_axis_tris.add_triangle(1074, 536, 534, 541);     //1074
+//z_axis_tris.add_triangle(1075, 552, 541, 534);     //1075
+//z_axis_tris.add_triangle(1076, 534, 536, 535);     //1076
+//z_axis_tris.add_triangle(1077, 551, 534, 535);     //1077
+//z_axis_tris.add_triangle(1078, 581, 619, 618);     //1078
+//z_axis_tris.add_triangle(1079, 532, 536, 543);     //1079
+//z_axis_tris.add_triangle(1080, 528, 535, 532);     //1080
+//z_axis_tris.add_triangle(1081, 533, 531, 619);     //1081
+//z_axis_tris.add_triangle(1082, 615, 545, 614);     //1082
+//z_axis_tris.add_triangle(1083, 544, 545, 529);     //1083
+//z_axis_tris.add_triangle(1084, 528, 531, 535);     //1084
+//z_axis_tris.add_triangle(1085, 621, 620, 531);     //1085
+//z_axis_tris.add_triangle(1086, 527, 528, 532);     //1086
+//z_axis_tris.add_triangle(1087, 622, 621, 531);     //1087
+//z_axis_tris.add_triangle(1088, 530, 615, 616);     //1088
+//z_axis_tris.add_triangle(1089, 626, 526, 616);     //1089
+//z_axis_tris.add_triangle(1090, 624, 528, 526);     //1090
+//z_axis_tris.add_triangle(1091, 623, 622, 531);     //1091
+//z_axis_tris.add_triangle(1092, 624, 623, 528);     //1092
+//z_axis_tris.add_triangle(1093, 625, 624, 526);     //1093
+//z_axis_tris.add_triangle(1094, 626, 625, 526);     //1094
+//z_axis_tris.add_triangle(1095, 616, 527, 530);     //1095
+//z_axis_tris.add_triangle(1096, 616, 526, 527);     //1096
+//z_axis_tris.add_triangle(1097, 528, 527, 526);     //1097
+//z_axis_tris.add_triangle(1098, 529, 530, 527);     //1098
+//z_axis_tris.add_triangle(1099, 531, 528, 623);     //1099
+//z_axis_tris.add_triangle(1100, 532, 529, 527);     //1100
+//z_axis_tris.add_triangle(1101, 529, 532, 543);     //1101
+//z_axis_tris.add_triangle(1102, 530, 529, 545);     //1102
+//z_axis_tris.add_triangle(1103, 615, 530, 545);     //1103
+//z_axis_tris.add_triangle(1104, 619, 531, 620);     //1104
+//z_axis_tris.add_triangle(1105, 536, 532, 535);     //1105
+//z_axis_tris.add_triangle(1106, 543, 544, 529);     //1106
+//z_axis_tris.add_triangle(1107, 533, 535, 531);     //1107
+//z_axis_tris.add_triangle(1108, 546, 533, 619);     //1108
+//z_axis_tris.add_triangle(1109, 533, 546, 551);     //1109
+//z_axis_tris.add_triangle(1110, 535, 533, 551);     //1110
+//z_axis_tris.add_triangle(1111, 534, 551, 552);     //1111
+//z_axis_tris.add_triangle(1112, 542, 543, 536);     //1112
+//z_axis_tris.add_triangle(1113, 541, 542, 536);     //1113
+//z_axis_tris.add_triangle(1114, 544, 543, 540);     //1114
+//z_axis_tris.add_triangle(1115, 545, 544, 537);     //1115
+//z_axis_tris.add_triangle(1116, 614, 545, 537);     //1116
+//z_axis_tris.add_triangle(1117, 537, 538, 580);     //1117
+//z_axis_tris.add_triangle(1118, 613, 537, 612);     //1118
+//z_axis_tris.add_triangle(1119, 540, 538, 544);     //1119
+//z_axis_tris.add_triangle(1120, 579, 580, 538);     //1120
+//z_axis_tris.add_triangle(1121, 541, 552, 553);     //1121
+//z_axis_tris.add_triangle(1122, 542, 541, 553);     //1122
+//z_axis_tris.add_triangle(1123, 539, 553, 577);     //1123
+//z_axis_tris.add_triangle(1124, 540, 539, 578);     //1124
+//z_axis_tris.add_triangle(1125, 581, 546, 619);     //1125
+//z_axis_tris.add_triangle(1126, 547, 582, 601);     //1126
+//z_axis_tris.add_triangle(1127, 551, 547, 550);     //1127
+//z_axis_tris.add_triangle(1128, 575, 576, 549);     //1128
+//z_axis_tris.add_triangle(1129, 603, 575, 548);     //1129
+//z_axis_tris.add_triangle(1130, 548, 549, 550);     //1130
+//z_axis_tris.add_triangle(1131, 602, 548, 525);     //1131
+//z_axis_tris.add_triangle(1132, 553, 549, 576);     //1132
+//z_axis_tris.add_triangle(1133, 552, 550, 549);     //1133
+//z_axis_tris.add_triangle(1134, 580, 579, 555);     //1134
+//z_axis_tris.add_triangle(1135, 612, 580, 554);     //1135
+//z_axis_tris.add_triangle(1136, 554, 555, 556);     //1136
+//z_axis_tris.add_triangle(1137, 611, 554, 610);     //1137
+//z_axis_tris.add_triangle(1138, 559, 555, 579);     //1138
+//z_axis_tris.add_triangle(1139, 560, 556, 555);     //1139
+//z_axis_tris.add_triangle(1140, 556, 560, 565);     //1140
+//z_axis_tris.add_triangle(1141, 610, 556, 566);     //1141
+//z_axis_tris.add_triangle(1142, 557, 571, 572);     //1142
+//z_axis_tris.add_triangle(1143, 577, 576, 571);     //1143
+//z_axis_tris.add_triangle(1144, 559, 557, 558);     //1144
+//z_axis_tris.add_triangle(1145, 578, 577, 557);     //1145
+//z_axis_tris.add_triangle(1146, 558, 572, 573);     //1146
+//z_axis_tris.add_triangle(1147, 560, 558, 564);     //1147
+//z_axis_tris.add_triangle(1148, 566, 565, 562);     //1148
+//z_axis_tris.add_triangle(1149, 609, 566, 561);     //1149
+//z_axis_tris.add_triangle(1150, 561, 562, 632);     //1150
+//z_axis_tris.add_triangle(1151, 608, 561, 641);     //1151
+//z_axis_tris.add_triangle(1152, 563, 562, 565);     //1152
+//z_axis_tris.add_triangle(1153, 633, 632, 562);     //1153
+//z_axis_tris.add_triangle(1154, 574, 563, 564);     //1154
+//z_axis_tris.add_triangle(1155, 634, 633, 563);     //1155
+//z_axis_tris.add_triangle(1156, 567, 604, 605);     //1156
+//z_axis_tris.add_triangle(1157, 575, 603, 604);     //1157
+//z_axis_tris.add_triangle(1158, 571, 567, 568);     //1158
+//z_axis_tris.add_triangle(1159, 576, 575, 567);     //1159
+//z_axis_tris.add_triangle(1160, 568, 605, 606);     //1160
+//z_axis_tris.add_triangle(1161, 572, 568, 570);     //1161
+//z_axis_tris.add_triangle(1162, 569, 607, 636);     //1162
+//z_axis_tris.add_triangle(1163, 570, 606, 607);     //1163
+//z_axis_tris.add_triangle(1164, 574, 569, 635);     //1164
+//z_axis_tris.add_triangle(1165, 573, 570, 569);     //1165
+//z_axis_tris.add_triangle(1166, 581, 582, 546);     //1166
+//z_axis_tris.add_triangle(1167, 616, 581, 626);     //1167
+//z_axis_tris.add_triangle(1168, 582, 616, 615);     //1168
+//z_axis_tris.add_triangle(1169, 582, 615, 585);     //1169
+//z_axis_tris.add_triangle(1170, 599, 600, 584);     //1170
+//z_axis_tris.add_triangle(1171, 612, 599, 613);     //1171
+//z_axis_tris.add_triangle(1172, 583, 601, 585);     //1172
+//z_axis_tris.add_triangle(1173, 613, 583, 614);     //1173
+//z_axis_tris.add_triangle(1174, 602, 584, 600);     //1174
+//z_axis_tris.add_triangle(1175, 601, 583, 584);     //1175
+//z_axis_tris.add_triangle(1176, 588, 589, 587);     //1176
+//z_axis_tris.add_triangle(1177, 591, 588, 586);     //1177
+//z_axis_tris.add_triangle(1178, 586, 587, 596);     //1178
+//z_axis_tris.add_triangle(1179, 590, 586, 597);     //1179
+//z_axis_tris.add_triangle(1180, 610, 587, 611);     //1180
+//z_axis_tris.add_triangle(1181, 609, 596, 610);     //1181
+//z_axis_tris.add_triangle(1182, 588, 591, 600);     //1182
+//z_axis_tris.add_triangle(1183, 589, 588, 599);     //1183
+//z_axis_tris.add_triangle(1184, 611, 589, 612);     //1184
+//z_axis_tris.add_triangle(1185, 605, 590, 598);     //1185
+//z_axis_tris.add_triangle(1186, 604, 591, 590);     //1186
+//z_axis_tris.add_triangle(1187, 603, 600, 591);     //1187
+//z_axis_tris.add_triangle(1188, 640, 639, 593);     //1188
+//z_axis_tris.add_triangle(1189, 641, 640, 592);     //1189
+//z_axis_tris.add_triangle(1190, 592, 593, 596);     //1190
+//z_axis_tris.add_triangle(1191, 608, 592, 609);     //1191
+//z_axis_tris.add_triangle(1192, 595, 593, 639);     //1192
+//z_axis_tris.add_triangle(1193, 597, 596, 593);     //1193
+//z_axis_tris.add_triangle(1194, 637, 636, 607);     //1194
+//z_axis_tris.add_triangle(1195, 638, 637, 594);     //1195
+//z_axis_tris.add_triangle(1196, 594, 607, 606);     //1196
+//z_axis_tris.add_triangle(1197, 595, 594, 598);     //1197
+//z_axis_tris.add_triangle(1198, 640, 627, 631);     //1198
+//z_axis_tris.add_triangle(1199, 639, 627, 640);     //1199
+//z_axis_tris.add_triangle(1200, 639, 638, 627);     //1200
+//z_axis_tris.add_triangle(1201, 638, 628, 627);     //1201
+//z_axis_tris.add_triangle(1202, 638, 637, 628);     //1202
+//z_axis_tris.add_triangle(1203, 637, 636, 628);     //1203
+//z_axis_tris.add_triangle(1204, 636, 629, 628);     //1204
+//z_axis_tris.add_triangle(1205, 636, 635, 629);     //1205
+//z_axis_tris.add_triangle(1206, 635, 634, 629);     //1206
+//z_axis_tris.add_triangle(1207, 634, 630, 629);     //1207
+//z_axis_tris.add_triangle(1208, 634, 633, 630);     //1208
+//z_axis_tris.add_triangle(1209, 631, 641, 640);     //1209
+//z_axis_tris.add_triangle(1210, 633, 632, 630);     //1210
+//z_axis_tris.add_triangle(1211, 632, 631, 630);     //1211
+//z_axis_tris.add_triangle(1212, 632, 641, 631);     //1212
+//z_axis_tris.add_triangle(1213, 708, 707, 711);     //1213
+//z_axis_tris.add_triangle(1214, 707, 715, 714);     //1214
+//z_axis_tris.add_triangle(1215, 738, 739, 707);     //1215
+//z_axis_tris.add_triangle(1216, 739, 740, 715);     //1216
+//z_axis_tris.add_triangle(1217, 716, 706, 709);     //1217
+//z_axis_tris.add_triangle(1218, 706, 708, 710);     //1218
+//z_axis_tris.add_triangle(1219, 736, 737, 706);     //1219
+//z_axis_tris.add_triangle(1220, 737, 738, 708);     //1220
+//z_axis_tris.add_triangle(1221, 705, 703, 737);     //1221
+//z_axis_tris.add_triangle(1222, 703, 712, 738);     //1222
+//z_axis_tris.add_triangle(1223, 702, 704, 710);     //1223
+//z_axis_tris.add_triangle(1224, 703, 705, 704);     //1224
+//z_axis_tris.add_triangle(1225, 713, 702, 711);     //1225
+//z_axis_tris.add_triangle(1226, 712, 703, 702);     //1226
+//z_axis_tris.add_triangle(1227, 719, 701, 735);     //1227
+//z_axis_tris.add_triangle(1228, 701, 705, 736);     //1228
+//z_axis_tris.add_triangle(1229, 700, 718, 717);     //1229
+//z_axis_tris.add_triangle(1230, 701, 719, 718);     //1230
+//z_axis_tris.add_triangle(1231, 704, 700, 709);     //1231
+//z_axis_tris.add_triangle(1232, 705, 701, 700);     //1232
+//z_axis_tris.add_triangle(1233, 695, 694, 741);     //1233
+//z_axis_tris.add_triangle(1234, 694, 715, 740);     //1234
+//z_axis_tris.add_triangle(1235, 697, 696, 694);     //1235
+//z_axis_tris.add_triangle(1236, 696, 714, 715);     //1236
+//z_axis_tris.add_triangle(1237, 693, 695, 742);     //1237
+//z_axis_tris.add_triangle(1238, 698, 697, 695);     //1238
+//z_axis_tris.add_triangle(1239, 692, 743, 748);     //1239
+//z_axis_tris.add_triangle(1240, 746, 699, 692);     //1240
+//z_axis_tris.add_triangle(1241, 699, 698, 693);     //1241
+//z_axis_tris.add_triangle(1242, 689, 696, 697);     //1242
+//z_axis_tris.add_triangle(1243, 688, 713, 714);     //1243
+//z_axis_tris.add_triangle(1244, 686, 712, 713);     //1244
+//z_axis_tris.add_triangle(1245, 740, 686, 687);     //1245
+//z_axis_tris.add_triangle(1246, 739, 738, 712);     //1246
+//z_axis_tris.add_triangle(1247, 685, 689, 691);     //1247
+//z_axis_tris.add_triangle(1248, 687, 688, 689);     //1248
+//z_axis_tris.add_triangle(1249, 742, 685, 690);     //1249
+//z_axis_tris.add_triangle(1250, 741, 687, 685);     //1250
+//z_axis_tris.add_triangle(1251, 699, 746, 745);     //1251
+//z_axis_tris.add_triangle(1252, 691, 697, 698);     //1252
+//z_axis_tris.add_triangle(1253, 683, 684, 745);     //1253
+//z_axis_tris.add_triangle(1254, 690, 691, 684);     //1254
+//z_axis_tris.add_triangle(1255, 683, 744, 748);     //1255
+//z_axis_tris.add_triangle(1256, 674, 673, 678);     //1256
+//z_axis_tris.add_triangle(1257, 673, 682, 681);     //1257
+//z_axis_tris.add_triangle(1258, 731, 730, 673);     //1258
+//z_axis_tris.add_triangle(1259, 730, 729, 682);     //1259
+//z_axis_tris.add_triangle(1260, 672, 674, 677);     //1260
+//z_axis_tris.add_triangle(1261, 732, 731, 674);     //1261
+//z_axis_tris.add_triangle(1262, 719, 671, 675);     //1262
+//z_axis_tris.add_triangle(1263, 671, 672, 676);     //1263
+//z_axis_tris.add_triangle(1264, 734, 733, 671);     //1264
+//z_axis_tris.add_triangle(1265, 733, 732, 672);     //1265
+//z_axis_tris.add_triangle(1266, 670, 668, 732);     //1266
+//z_axis_tris.add_triangle(1267, 668, 679, 731);     //1267
+//z_axis_tris.add_triangle(1268, 667, 669, 677);     //1268
+//z_axis_tris.add_triangle(1269, 668, 670, 669);     //1269
+//z_axis_tris.add_triangle(1270, 680, 667, 678);     //1270
+//z_axis_tris.add_triangle(1271, 679, 668, 667);     //1271
+//z_axis_tris.add_triangle(1272, 716, 666, 735);     //1272
+//z_axis_tris.add_triangle(1273, 666, 665, 734);     //1273
+//z_axis_tris.add_triangle(1274, 665, 670, 733);     //1274
+//z_axis_tris.add_triangle(1275, 664, 717, 718);     //1275
+//z_axis_tris.add_triangle(1276, 666, 716, 717);     //1276
+//z_axis_tris.add_triangle(1277, 669, 663, 676);     //1277
+//z_axis_tris.add_triangle(1278, 663, 664, 675);     //1278
+//z_axis_tris.add_triangle(1279, 670, 665, 663);     //1279
+//z_axis_tris.add_triangle(1280, 665, 666, 664);     //1280
+//z_axis_tris.add_triangle(1281, 657, 662, 661);     //1281
+//z_axis_tris.add_triangle(1282, 728, 727, 662);     //1282
+//z_axis_tris.add_triangle(1283, 682, 657, 658);     //1283
+//z_axis_tris.add_triangle(1284, 729, 728, 657);     //1284
+//z_axis_tris.add_triangle(1285, 660, 656, 658);     //1285
+//z_axis_tris.add_triangle(1286, 656, 680, 681);     //1286
+//z_axis_tris.add_triangle(1287, 655, 659, 729);     //1287
+//z_axis_tris.add_triangle(1288, 656, 660, 659);     //1288
+//z_axis_tris.add_triangle(1289, 679, 655, 730);     //1289
+//z_axis_tris.add_triangle(1290, 680, 656, 655);     //1290
+//z_axis_tris.add_triangle(1291, 650, 662, 727);     //1291
+//z_axis_tris.add_triangle(1292, 653, 650, 651);     //1292
+//z_axis_tris.add_triangle(1293, 652, 661, 662);     //1293
+//z_axis_tris.add_triangle(1294, 649, 725, 724);     //1294
+//z_axis_tris.add_triangle(1295, 651, 726, 725);     //1295
+//z_axis_tris.add_triangle(1296, 649, 723, 722);     //1296
+//z_axis_tris.add_triangle(1297, 648, 646, 652);     //1297
+//z_axis_tris.add_triangle(1298, 646, 660, 661);     //1298
+//z_axis_tris.add_triangle(1299, 645, 647, 727);     //1299
+//z_axis_tris.add_triangle(1300, 646, 648, 647);     //1300
+//z_axis_tris.add_triangle(1301, 659, 645, 728);     //1301
+//z_axis_tris.add_triangle(1302, 660, 646, 645);     //1302
+//z_axis_tris.add_triangle(1303, 721, 644, 654);     //1303
+//z_axis_tris.add_triangle(1304, 644, 648, 653);     //1304
+//z_axis_tris.add_triangle(1305, 643, 647, 648);     //1305
+//z_axis_tris.add_triangle(1306, 726, 727, 647);     //1306
+//z_axis_tris.add_triangle(1307, 642, 644, 721);     //1307
+//z_axis_tris.add_triangle(1308, 724, 725, 642);     //1308
+//z_axis_tris.add_triangle(1309, 725, 726, 643);     //1309
+//z_axis_tris.add_triangle(1310, 642, 725, 643);     //1310
+//z_axis_tris.add_triangle(1311, 720, 724, 642);     //1311
+//z_axis_tris.add_triangle(1312, 642, 643, 644);     //1312
+//z_axis_tris.add_triangle(1313, 720, 642, 721);     //1313
+//z_axis_tris.add_triangle(1314, 643, 726, 647);     //1314
+//z_axis_tris.add_triangle(1315, 644, 643, 648);     //1315
+//z_axis_tris.add_triangle(1316, 654, 644, 653);     //1316
+//z_axis_tris.add_triangle(1317, 722, 721, 654);     //1317
+//z_axis_tris.add_triangle(1318, 659, 660, 645);     //1318
+//z_axis_tris.add_triangle(1319, 729, 659, 728);     //1319
+//z_axis_tris.add_triangle(1320, 645, 646, 647);     //1320
+//z_axis_tris.add_triangle(1321, 728, 645, 727);     //1321
+//z_axis_tris.add_triangle(1322, 652, 646, 661);     //1322
+//z_axis_tris.add_triangle(1323, 653, 648, 652);     //1323
+//z_axis_tris.add_triangle(1324, 651, 649, 654);     //1324
+//z_axis_tris.add_triangle(1325, 654, 649, 722);     //1325
+//z_axis_tris.add_triangle(1326, 725, 649, 651);     //1326
+//z_axis_tris.add_triangle(1327, 724, 723, 649);     //1327
+//z_axis_tris.add_triangle(1328, 653, 652, 650);     //1328
+//z_axis_tris.add_triangle(1329, 650, 652, 662);     //1329
+//z_axis_tris.add_triangle(1330, 651, 654, 653);     //1330
+//z_axis_tris.add_triangle(1331, 651, 650, 726);     //1331
+//z_axis_tris.add_triangle(1332, 726, 650, 727);     //1332
+//z_axis_tris.add_triangle(1333, 679, 680, 655);     //1333
+//z_axis_tris.add_triangle(1334, 731, 679, 730);     //1334
+//z_axis_tris.add_triangle(1335, 655, 656, 659);     //1335
+//z_axis_tris.add_triangle(1336, 730, 655, 729);     //1336
+//z_axis_tris.add_triangle(1337, 658, 656, 681);     //1337
+//z_axis_tris.add_triangle(1338, 661, 660, 658);     //1338
+//z_axis_tris.add_triangle(1339, 682, 729, 657);     //1339
+//z_axis_tris.add_triangle(1340, 681, 682, 658);     //1340
+//z_axis_tris.add_triangle(1341, 657, 728, 662);     //1341
+//z_axis_tris.add_triangle(1342, 658, 657, 661);     //1342
+//z_axis_tris.add_triangle(1343, 663, 665, 664);     //1343
+//z_axis_tris.add_triangle(1344, 669, 670, 663);     //1344
+//z_axis_tris.add_triangle(1345, 676, 663, 675);     //1345
+//z_axis_tris.add_triangle(1346, 677, 669, 676);     //1346
+//z_axis_tris.add_triangle(1347, 664, 666, 717);     //1347
+//z_axis_tris.add_triangle(1348, 675, 664, 718);     //1348
+//z_axis_tris.add_triangle(1349, 734, 665, 733);     //1349
+//z_axis_tris.add_triangle(1350, 735, 666, 734);     //1350
+//z_axis_tris.add_triangle(1351, 736, 716, 735);     //1351
+//z_axis_tris.add_triangle(1352, 680, 679, 667);     //1352
+//z_axis_tris.add_triangle(1353, 681, 680, 678);     //1353
+//z_axis_tris.add_triangle(1354, 667, 668, 669);     //1354
+//z_axis_tris.add_triangle(1355, 678, 667, 677);     //1355
+//z_axis_tris.add_triangle(1356, 732, 668, 731);     //1356
+//z_axis_tris.add_triangle(1357, 733, 670, 732);     //1357
+//z_axis_tris.add_triangle(1358, 671, 733, 672);     //1358
+//z_axis_tris.add_triangle(1359, 719, 734, 671);     //1359
+//z_axis_tris.add_triangle(1360, 675, 671, 676);     //1360
+//z_axis_tris.add_triangle(1361, 718, 719, 675);     //1361
+//z_axis_tris.add_triangle(1362, 672, 732, 674);     //1362
+//z_axis_tris.add_triangle(1363, 676, 672, 677);     //1363
+//z_axis_tris.add_triangle(1364, 673, 730, 682);     //1364
+//z_axis_tris.add_triangle(1365, 674, 731, 673);     //1365
+//z_axis_tris.add_triangle(1366, 678, 673, 681);     //1366
+//z_axis_tris.add_triangle(1367, 677, 674, 678);     //1367
+//z_axis_tris.add_triangle(1368, 690, 683, 743);     //1368
+//z_axis_tris.add_triangle(1369, 743, 683, 748);     //1369
+//z_axis_tris.add_triangle(1370, 684, 683, 690);     //1370
+//z_axis_tris.add_triangle(1371, 745, 744, 683);     //1371
+//z_axis_tris.add_triangle(1372, 698, 684, 691);     //1372
+//z_axis_tris.add_triangle(1373, 698, 699, 684);     //1373
+//z_axis_tris.add_triangle(1374, 684, 699, 745);     //1374
+//z_axis_tris.add_triangle(1375, 685, 742, 741);     //1375
+//z_axis_tris.add_triangle(1376, 690, 743, 742);     //1376
+//z_axis_tris.add_triangle(1377, 689, 685, 687);     //1377
+//z_axis_tris.add_triangle(1378, 691, 690, 685);     //1378
+//z_axis_tris.add_triangle(1379, 740, 739, 686);     //1379
+//z_axis_tris.add_triangle(1380, 686, 739, 712);     //1380
+//z_axis_tris.add_triangle(1381, 687, 741, 740);     //1381
+//z_axis_tris.add_triangle(1382, 687, 686, 688);     //1382
+//z_axis_tris.add_triangle(1383, 688, 686, 713);     //1383
+//z_axis_tris.add_triangle(1384, 689, 688, 696);     //1384
+//z_axis_tris.add_triangle(1385, 696, 688, 714);     //1385
+//z_axis_tris.add_triangle(1386, 697, 691, 689);     //1386
+//z_axis_tris.add_triangle(1387, 692, 699, 693);     //1387
+//z_axis_tris.add_triangle(1388, 747, 746, 692);     //1388
+//z_axis_tris.add_triangle(1389, 692, 693, 743);     //1389
+//z_axis_tris.add_triangle(1390, 747, 692, 748);     //1390
+//z_axis_tris.add_triangle(1391, 693, 698, 695);     //1391
+//z_axis_tris.add_triangle(1392, 743, 693, 742);     //1392
+//z_axis_tris.add_triangle(1393, 694, 696, 715);     //1393
+//z_axis_tris.add_triangle(1394, 695, 697, 694);     //1394
+//z_axis_tris.add_triangle(1395, 741, 694, 740);     //1395
+//z_axis_tris.add_triangle(1396, 742, 695, 741);     //1396
+//z_axis_tris.add_triangle(1397, 704, 705, 700);     //1397
+//z_axis_tris.add_triangle(1398, 710, 704, 709);     //1398
+//z_axis_tris.add_triangle(1399, 700, 701, 718);     //1399
+//z_axis_tris.add_triangle(1400, 709, 700, 717);     //1400
+//z_axis_tris.add_triangle(1401, 735, 701, 736);     //1401
+//z_axis_tris.add_triangle(1402, 734, 719, 735);     //1402
+//z_axis_tris.add_triangle(1403, 713, 712, 702);     //1403
+//z_axis_tris.add_triangle(1404, 714, 713, 711);     //1404
+//z_axis_tris.add_triangle(1405, 702, 703, 704);     //1405
+//z_axis_tris.add_triangle(1406, 711, 702, 710);     //1406
+//z_axis_tris.add_triangle(1407, 737, 703, 738);     //1407
+//z_axis_tris.add_triangle(1408, 736, 705, 737);     //1408
+//z_axis_tris.add_triangle(1409, 706, 737, 708);     //1409
+//z_axis_tris.add_triangle(1410, 716, 736, 706);     //1410
+//z_axis_tris.add_triangle(1411, 709, 706, 710);     //1411
+//z_axis_tris.add_triangle(1412, 717, 716, 709);     //1412
+//z_axis_tris.add_triangle(1413, 707, 739, 715);     //1413
+//z_axis_tris.add_triangle(1414, 708, 738, 707);     //1414
+//z_axis_tris.add_triangle(1415, 711, 707, 714);     //1415
+//z_axis_tris.add_triangle(1416, 710, 708, 711);     //1416
+
+////_________________________________________________________________
+//// Boundary points
+//bndry_pts = new nodes_store();
+//bndry_pts.add_point(749, -0.998, -0.998, 0, Color.Black);// 749
+//bndry_pts.add_point(750, 0.998, -0.998, 0, Color.Black);// 750
+//bndry_pts.add_point(751, 0.998, 0.998, 0, Color.Black);// 751
+//bndry_pts.add_point(752, -0.998, 0.998, 0, Color.Black);// 752
+
+//// Boundary lines
+//bndry_lines = new line_elements();
+//bndry_lines.add_line(1417, 749, 750); //1417
+//bndry_lines.add_line(1418, 750, 751); //1418
+//bndry_lines.add_line(1419, 751, 752); //1419
+//bndry_lines.add_line(1420, 752, 749); //1420

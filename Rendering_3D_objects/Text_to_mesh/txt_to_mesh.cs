@@ -25,7 +25,7 @@ namespace Rendering_3D_objects.Text_to_mesh
 
             // Initialize the output variables
             nodes = new nodes_store();
-            elines = new line_elements();
+            elines = new line_elements(false);
             etris = new tri_elements();
             equads = new quad_elements();
 
@@ -61,7 +61,7 @@ namespace Rendering_3D_objects.Text_to_mesh
                             int nd2 = int.Parse(values[4]);
 
                             // Add to lines
-                            elines.add_line(l_id, nd1, nd2);
+                            elines.add_line(l_id, nd1, nd2, nodes);
                         }
 
                         // tri element
@@ -73,7 +73,7 @@ namespace Rendering_3D_objects.Text_to_mesh
                             int nd3 = int.Parse(values[5]);
 
                             // Add to lines
-                            etris.add_triangle(l_id, nd1, nd2, nd3);
+                            etris.add_triangle(l_id, nd1, nd2, nd3, nodes);
                         }
 
                         // Quad element

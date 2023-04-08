@@ -88,16 +88,24 @@
     <Compile Include="drawing_object_store\drawing_objects\quad_elements.cs" />
     <Compile Include="drawing_object_store\drawing_objects\tri_elements.cs" />
     <Compile Include="drawing_object_store\geometry_store.cs" />
+    <Compile Include="global_variables\gvariables_static.cs" />
     <Compile Include="main_form.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="main_form.Designer.cs">
       <DependentUpon>main_form.cs</DependentUpon>
     </Compile>
+    <Compile Include="open_tk_control\arcball_transformation.cs" />
+    <Compile Include="open_tk_control\opentk_main_control.cs" />
+    <Compile Include="open_tk_control\open_tk_bgdraw\drawing_area_control.cs" />
+    <Compile Include="open_tk_control\open_tk_bgdraw\draw_axis_store.cs" />
     <Compile Include="open_tk_control\open_tk_buffer\IndexBuffer.cs" />
     <Compile Include="open_tk_control\open_tk_buffer\VertexArray.cs" />
     <Compile Include="open_tk_control\open_tk_buffer\VertexBuffer.cs" />
     <Compile Include="open_tk_control\open_tk_buffer\VertexBufferLayout.cs" />
+    <Compile Include="open_tk_control\open_tk_shader\Shader.cs" />
+    <Compile Include="open_tk_control\open_tk_shader\shader_store.cs" />
+    <Compile Include="open_tk_control\open_tk_shader\shader_transformations.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Text_to_mesh\txt_to_mesh.cs" />
@@ -133,6 +141,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Examples\cube_quad_sm.txt" />
+    <Content Include="Examples\cube_quad_s2.txt" />
+    <Content Include="Examples\cube_quad_s.txt" />
     <Content Include="Examples\cube_r.txt" />
     <Content Include="Examples\cylinder_r.txt" />
     <Content Include="Examples\donut_r.txt" />
@@ -146,6 +157,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="innx_icon.ico" />
+    <Content Include="Text_to_mesh\junk_code.txt" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">

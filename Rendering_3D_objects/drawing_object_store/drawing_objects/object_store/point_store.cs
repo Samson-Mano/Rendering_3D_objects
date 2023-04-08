@@ -101,6 +101,9 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects.object_store
             this.d_y = t_y;
             this.d_z = t_z;
 
+            // Initial update
+            update_scale(1.0f, 0, 0, 0);
+
             // Add the input to integer to avoid floating point impressision issues
             // Easier to compare the inputs
             this._x = (int)(t_x * 100000);

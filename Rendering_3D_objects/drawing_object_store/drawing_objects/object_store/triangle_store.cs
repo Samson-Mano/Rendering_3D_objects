@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+// OpenTK library
+using OpenTK;
 
 namespace Rendering_3D_objects.drawing_object_store.drawing_objects.object_store
 {
@@ -14,12 +16,37 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects.object_store
 
         public int pt2_id { get; private set; }
 
-        public triangle_store( int t_pt0_id, int t_pt1_id, int t_pt2_id)
+        public point_store pt0 { get; private set; }
+
+        public point_store pt1 { get; private set; }
+
+        public point_store pt2 { get; private set; }
+
+        public Vector3 tri_normal { get; private set; }
+
+        public triangle_store( int t_pt0_id, int t_pt1_id, int t_pt2_id, point_store t_pt0, point_store t_pt1, point_store t_pt2)
         {
             // Main constructor
+            // IDs
             this.pt0_id = t_pt0_id;
             this.pt1_id = t_pt1_id;
             this.pt2_id = t_pt2_id;
+            // Points
+            this.pt0 = t_pt0;
+            this.pt1 = t_pt1;
+            this.pt2 = t_pt2;
+
+            tri_normal = get_normal(t_pt0, t_pt1, t_pt2);
+        }
+
+        private Vector3 get_normal(point_store p0, point_store p1, point_store p2)
+        {
+            // Get the normal of vector
+            Vector3 edge1 = p1.get_point_as_vector() - p0.get_point_as_vector();
+            Vector3 edge2 = p2.get_point_as_vector() - p0.get_point_as_vector();
+
+            // Compute the normal vector as the cross product of the two vectors
+            return Vector3.Cross(edge1, edge2).Normalized();
         }
 
         public override bool Equals(object obj)
@@ -55,7 +82,5 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects.object_store
         {
             return HashCode.Combine( this.pt0_id, this.pt1_id, this.pt2_id);
         }
-
-
     }
 }
