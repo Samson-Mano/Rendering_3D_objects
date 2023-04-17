@@ -15,9 +15,8 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
             // Stores the Background vertex shader
             return "#version 330 core\r\n" +
                     "\r\n" +
+                    "uniform mat4 modelMatrix;\r\n" +
                     "uniform mat4 rotationMatrix;\r\n" +
-                    "uniform mat4 gTranslation;\r\n" +
-                    "uniform float g_scale = 1.0f;\r\n" +
                     "\r\n" +
                     "layout(location = 0) in vec3 position;\r\n" +
                     "layout(location = 1) in vec4 vertexColor;\r\n" +
@@ -27,28 +26,20 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
                     "\r\n" +
                     "void main()\r\n" +
                     "{\r\n" +
-                        "// apply scaling \r\n" + 
-                        "vec4 scaledPosition = vec4(position * g_scale, 1.0);\r\n" +
-                        "// apply rotation \r\n" +
-                        "vec4 rotatedPosition = rotationMatrix * scaledPosition;\r\n" +
-                        "// apply translation \r\n" +
-                        "vec4 translatedPosition =rotatedPosition *  gTranslation;\r\n" +
-                        "\r\n" +
                         "v_Color = vertexColor;\r\n" +
-                        "gl_Position = translatedPosition;\r\n" +
+                        "gl_Position = modelMatrix * rotationMatrix * vec4(position,1.0);\r\n" +
                     "}\r\n";
         }
 
         public string line_vert_shader()
         {
-            // Stores the Geometry vertex shader
+            // Stores the Geometry line vertex shader
             return "#version 330 core\r\n" +
                     "\r\n" +
+                    "uniform mat4 modelMatrix;\r\n" +
                     "uniform mat4 rotationMatrix;\r\n" +
-                    "uniform mat4 gTranslation;\r\n" +
-                    "uniform vec3 rotation_point;\r\n" +
-                    "uniform float g_scale = 1.0f;\r\n" +
-                    "uniform float p_scale = 1.0f;\r\n" +
+                    "uniform mat4 panTranslation;\r\n" +
+                    "uniform float zoomscale;\r\n" +
                     "\r\n" +
                     "layout(location = 0) in vec3 position;\r\n" +
                     "layout(location = 1) in vec4 vertexColor;\r\n" +
@@ -58,47 +49,67 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
                     "\r\n" +
                     "void main()\r\n" +
                     "{\r\n" +
-                        "// apply scaling \r\n" +
-                        "vec4 scaledPosition = vec4(position * g_scale * p_scale, 1.0);\r\n" +
-                        "// apply rotation \r\n" +
-                        "vec4 rotatedPosition = rotationMatrix * (scaledPosition - vec4(rotation_point,1.0));\r\n" +
-                        "// apply translation \r\n" +
-                        "vec4 translatedPosition = (rotatedPosition + vec4(rotation_point,1.0)) *  gTranslation;\r\n" +
+                        "// apply zoom scaling and Rotation to model matrix \r\n" +
+                        "mat4 scalingMatrix = mat4(1.0)*zoomscale; \r\n" +
+                        "scalingMatrix[3][3] = 1.0f; \r\n" +
+                        "mat4 scaledModelMatrix = scalingMatrix * modelMatrix; \r\n" +
+                        "mat4 rotatedModelMatrix = rotationMatrix * scaledModelMatrix; \r\n" +
+                        "mat4 translatedModelMatrix =  rotatedModelMatrix * panTranslation; \r\n" +
+                        "\r\n" +
+                        "// apply Translation to the final position \r\n" +
+                        "vec4 finalPosition = rotatedModelMatrix * vec4(position,1.0f) * panTranslation;\r\n" +
                         "\r\n" +
                         "v_Color = vertexColor;\r\n" +
-                        "gl_Position = translatedPosition;\r\n" +
+                        "gl_Position = finalPosition;\r\n" +
                     "}\r\n";
         }
 
         public string surface_vert_shader()
         {
-            // Stores the Geometry vertex shader
+            // Stores the Geometry surface vertex shader
             return "#version 330 core\r\n" +
                     "\r\n" +
+                    "uniform mat4 modelMatrix;\r\n" +
                     "uniform mat4 rotationMatrix;\r\n" +
-                    "uniform mat4 gTranslation;\r\n" +
-                    "uniform vec3 rotation_point;\r\n" +
-                    "uniform float g_scale = 1.0f;\r\n" +
-                    "uniform float p_scale = 1.0f;\r\n" +
+                    "uniform mat4 panTranslation;\r\n" +
+                    "uniform float zoomscale;\r\n" +
                     "\r\n" +
                     "layout(location = 0) in vec3 position;\r\n" +
                     "layout(location = 1) in vec4 vertexColor;\r\n" +
+                    "layout(location = 2) in vec3 surfnormal;\r\n" +
                     "\r\n" +
                     "\r\n" +
+                    "out vec3 s_normal;\r\n" +
                     "out vec4 v_Color;\r\n" +
+                    "\r\n" +
+                    "mat4 scaleMatrix(in float scale) \r\n" +
+                    "{ \r\n" +
+                        "return mat4( \r\n" +
+                          "scale, 0.0, 0.0, 0.0, \r\n" +
+                          "0.0, scale, 0.0, 0.0, \r\n" +
+                          "0.0, 0.0, scale, 0.0, \r\n" +
+                          "0.0, 0.0, 0.0, 1.0 \r\n" +
+                        "); \r\n" +
+                    "} \r\n" +
                     "\r\n" +
                     "void main()\r\n" +
                     "{\r\n" +
-                        "// apply scaling \r\n" +
-                        "vec4 scaledPosition = vec4(position * g_scale * p_scale, 1.0);\r\n" +
-                        "// apply rotation \r\n" +
-                        "vec4 rotatedPosition = rotationMatrix * (scaledPosition - vec4(rotation_point,1.0));\r\n" +
-                        "// apply translation \r\n" +
-                        "vec4 translatedPosition = (rotatedPosition + vec4(rotation_point,1.0)) *  gTranslation;\r\n" +
                         "\r\n" +
+                        "// apply zoom scaling and Rotation to model matrix \r\n" +
+                        "mat4 scalingMatrix = scaleMatrix(zoomscale); \r\n" +
+                        "mat4 scaledModelMatrix = scalingMatrix * modelMatrix; \r\n" +
+                        "mat4 rotatedModelMatrix = rotationMatrix * scaledModelMatrix; \r\n" +
+                        "mat4 translatedModelMatrix =  rotatedModelMatrix * panTranslation; \r\n" +
+                        "\r\n" +
+                        "// apply Translation to the final position \r\n" +
+                        "vec4 finalPosition = rotatedModelMatrix * vec4(position,1.0f) * panTranslation;\r\n" +
+                        "\r\n" +
+                        "vec4 finalsurfnormal = rotationMatrix * vec4(surfnormal,1.0f);\r\n" +
+                        "\r\n" +
+                        "s_normal = vec3(finalsurfnormal.x,finalsurfnormal.y,finalsurfnormal.z);\r\n" +
                         "v_Color = vertexColor;\r\n" +
-                        "gl_Position = translatedPosition;\r\n" +
-                    "}\r\n";
+                        "gl_Position = finalPosition;\r\n" +
+                    "} \r\n";
         }
 
         public string txt_vert_shader()
@@ -125,7 +136,7 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
 
         public string line_frag_shader()
         {
-            // Stores the Geometry fragment shader
+            // Stores the Geometry line fragment shader
             return "#version 330 core\r\n" +
                     "\r\n" +
                     "in vec4 v_Color;\r\n" +
@@ -137,19 +148,44 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
                     "}";
         }
 
-
         public string surface_frag_shader()
         {
-            // Stores the Geometry fragment shader
+            // Stores the Geometry surface fragment shader
             return "#version 330 core\r\n" +
                     "\r\n" +
+                    "in vec3 s_normal;\r\n" +
                     "in vec4 v_Color;\r\n" +
                     "out vec4 f_Color; // fragment's final color (out to the fragment shader)\r\n" +
                     "\r\n" +
                     "void main()\r\n" +
                     "{\r\n" +
-                        "f_Color = v_Color;\r\n" +
-                    "}";
+                        "vec3 viewDirection = {0.0,0.0,50.0}; \r\n" +
+                        "// Normalize the interpolated normal \r\n" +
+                        "vec3 normal = normalize(s_normal); \r\n" +
+                        "\r\n" +
+                        "// Use the constant view direction \r\n" +
+                        "vec3 viewDir = {0.0,0.0,1.0}; // normalize(viewDirection); \r\n" +
+                        "\r\n" +
+                        "// Use the light direction slightly off the view direction \r\n" +
+                        "vec3 lightDir = vec3(0, 0, 1); //normalize(viewDir + vec3(0, 0, 1)); \r\n" +
+                        "\r\n" +
+                        "// Set the constant light color to white \r\n" +
+                        "vec4 lightColor = vec4(1.0); \r\n" +
+                        "\r\n" +
+                        "// Calculate the reflection vector \r\n" +
+                        "vec3 reflection = reflect(-lightDir, normal); \r\n" +
+                        "\r\n" +
+                        "// Calculate the diffuse and specular components of the Phong model \r\n" +
+                        "float diffuse = max(dot(lightDir, normal), 0.0); \r\n" +
+                        "float specular = pow(max(dot(reflection, viewDir), 0.0), 32.0); \r\n" +
+                        "\r\n" +
+                        "// Combine the diffuse and specular components with the vertex color and light color \r\n" +
+                        "vec4 diffuseColor = v_Color * diffuse; \r\n" +
+                        "vec4 specularColor = lightColor * specular; \r\n" +
+                        "\r\n" +
+                        "// Set the fragment color as the sum of the diffuse and specular components \r\n" +
+                        "f_Color = diffuseColor + specularColor; \r\n" +
+                      "}"; 
         }
 
         public string txt_frag_shader()

@@ -22,7 +22,7 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_bgdraw
     {
         // Define X,Y,Z and center point as triangles
         Vector3 axis_origin = new Vector3(0, 0, 0);
-        float scale_x = 1.0f;
+        // float scale_x = 1.0f;
 
         // Origin
         public nodes_store axis_nodes;

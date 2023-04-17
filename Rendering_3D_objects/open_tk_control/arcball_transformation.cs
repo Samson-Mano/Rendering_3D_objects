@@ -18,14 +18,14 @@ namespace Rendering_3D_objects.open_tk_control
         private Vector3 endVector;
         private Quaternion rotation;
 
-        public void OnMouseDown(PointF mousePt)
+        public void OnMouseDown(Vector2 mousePt)
         {
-            startVector = ProjectToSphere(mousePt, 1.0f);
+            startVector = ProjectToSphere(mousePt, 2.0f);
         }
 
-        public void OnMouseMove(PointF mousePt)
+        public void OnMouseMove(Vector2 mousePt)
         {
-            endVector = ProjectToSphere(mousePt, 1.0f);
+            endVector = ProjectToSphere(mousePt, 2.0f);
 
             // Compute the rotation quaternion from the start and end vectors
             Quaternion q;
@@ -57,7 +57,7 @@ namespace Rendering_3D_objects.open_tk_control
         }
 
 
-        private Vector3 ProjectToSphere(PointF point, float radius)
+        private Vector3 ProjectToSphere(Vector2 point, float radius)
         {
             // Scale point to range [-1,1]
             float x = point.X / radius;

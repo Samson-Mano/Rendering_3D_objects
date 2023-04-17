@@ -164,7 +164,7 @@ namespace Rendering_3D_objects
             // Update the size of the drawing area
             g_control.update_drawing_area_size(glControl_main_panel.Width,
                 glControl_main_panel.Height);
-            g_control.update_geom_shader(geom.geom_bounds_max,geom.geom_bounds_min);
+            g_control.update_geom_shader(geom.geom_bounds_max, geom.geom_bounds_min);
 
 
             toolStripStatusLabel_Zoom.Text = "Zoom: " + (gvariables_static.RoundOff((int)(1.0f * 100))).ToString() + "%";
@@ -209,6 +209,24 @@ namespace Rendering_3D_objects
             glControl_main_panel.SwapBuffers();
         }
 
+        private void glControl_main_panel_MouseWheel(object sender, System.Windows.Forms.MouseEventArgs e)
+        {
+            // User press hold Cntrl key and mouse wheel
+            if (gvariables_static.Is_cntrldown == true)
+            {
+                // Zoom operation commences
+                glControl_main_panel.Focus();
+
+                g_control.intelli_zoom_operation(e.Delta, new PointF(e.X, e.Y));
+
+                // Update the zoom value in tool strip status bar
+                toolStripStatusLabel_Zoom.Text = "Zoom: " + (gvariables_static.RoundOff((int)(100f * g_control.zoom_scale))).ToString() + "%";
+                // Refresh the painting area
+                glControl_main_panel.Refresh();
+            }
+        }
+
+
         private void glControl_main_panel_MouseDown(object sender, System.Windows.Forms.MouseEventArgs e)
         {
             if (gvariables_static.Is_cntrldown == true)
@@ -247,6 +265,21 @@ namespace Rendering_3D_objects
 
         private void glControl_main_panel_MouseMove(object sender, System.Windows.Forms.MouseEventArgs e)
         {
+            // Get the mouse coordinates
+            int mouseX = e.X;
+            int mouseY = e.Y;
+
+            // Get the OpenGL viewport dimensions
+            int[] viewport = new int[4];
+            GL.GetInteger(GetPName.Viewport, viewport);
+
+            // Convert the mouse coordinates to OpenGL coordinates
+            float glX = viewport[0];
+            float glY = viewport[1];
+
+            toolStripStatusLabel_location.Text = $"(X: {glX}, Y: {glY})";
+
+
             if (gvariables_static.Is_panflg == true)
             {
                 // Pan operation in progress
@@ -265,12 +298,12 @@ namespace Rendering_3D_objects
             }
         }
 
-        private void glControl_main_panel_MouseClick(object sender, System.Windows.Forms.MouseEventArgs e)
+        private void glControl_main_panel_MouseDoubleClick(object sender, System.Windows.Forms.MouseEventArgs e)
         {
             if (gvariables_static.Is_cntrldown == true && e.Button == MouseButtons.Left)
             {
                 // Set the Rotation center
-                g_control.rotate_set_center(new PointF(e.X, e.Y));
+                g_control.rotate_set_center(new PointF(e.X, e.Y), geom.nodes);
             }
         }
 
@@ -291,8 +324,7 @@ namespace Rendering_3D_objects
             {
                 gvariables_static.Is_rotateflg = false;
 
-                // Rotate operation ends (save the rotate transformation)
-                g_control.rotate_operation_complete();
+                // Rotate operation ends
 
                 //Refresh the painting area
                 glControl_main_panel.Refresh();
@@ -312,7 +344,7 @@ namespace Rendering_3D_objects
                 {
                     // (Ctrl + F) --> Zoom to fit
                     g_control.update_geom_shader(geom.geom_bounds_max, geom.geom_bounds_min);
-                   // g_control.zoom_to_fit(ref glControl_main_panel);
+                    // g_control.zoom_to_fit(ref glControl_main_panel);
 
                     toolStripStatusLabel_Zoom.Text = "Zoom: " + (gvariables_static.RoundOff((int)(1.0f * 100))).ToString() + "%";
                     toolStripStatusLabel_Zoom.Invalidate();
