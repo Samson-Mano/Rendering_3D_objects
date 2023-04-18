@@ -184,7 +184,7 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
                         "vec4 specularColor = lightColor * specular; \r\n" +
                         "\r\n" +
                         "// Set the fragment color as the sum of the diffuse and specular components \r\n" +
-                        "f_Color = diffuseColor + specularColor; \r\n" +
+                        "f_Color = v_Color; // diffuseColor + specularColor; \r\n" +
                       "}"; 
         }
 
