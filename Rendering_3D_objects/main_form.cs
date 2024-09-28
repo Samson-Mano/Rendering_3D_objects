@@ -179,6 +179,8 @@ namespace Rendering_3D_objects
             // Tell OpenGL to use MyGLControl
             glControl_main_panel.MakeCurrent();
 
+            GL.Enable(EnableCap.DepthClamp);
+            // GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(0, BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
 
@@ -192,6 +194,7 @@ namespace Rendering_3D_objects
             geom.paint_surf_objects();
 
             // Display the model using OpenGL
+            
             GL.LineWidth(2.73f);
             g_control.set_opengl_shader("linegeometry");
             // geom.set_openTK_objects();
