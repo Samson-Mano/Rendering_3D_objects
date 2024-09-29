@@ -27,11 +27,14 @@ void new_model_window::render_window()
 	//_____________________________________________________________________________________________________________________________________________________________________
 	// Create three radio buttons for model options
 
-	ImGui::RadioButton("Spherical Mesh - 32 Quad", &option_model_type, 0);
-	ImGui::RadioButton("Spherical Mesh - 32 Triangle",&option_model_type,1);
-	ImGui::RadioButton("Spherical Mesh - 64 Quad", &option_model_type, 2);
-	ImGui::RadioButton("Spherical Mesh - 64 Triangle", &option_model_type, 3);
-	ImGui::RadioButton("Spherical Mesh - 128 Triangle", &option_model_type, 4);
+	ImGui::RadioButton("Square Test", &option_model_type, 0);
+	ImGui::RadioButton("Diamond Test", &option_model_type, 1);
+	ImGui::RadioButton("Donut Test", &option_model_type, 2);
+	ImGui::RadioButton("Spherical Mesh - 32 Quad", &option_model_type, 3);
+	ImGui::RadioButton("Spherical Mesh - 32 Triangle", &option_model_type, 4);
+	ImGui::RadioButton("Spherical Mesh - 64 Quad", &option_model_type, 5);
+	ImGui::RadioButton("Spherical Mesh - 64 Triangle", &option_model_type, 6);
+	ImGui::RadioButton("Spherical Mesh - 128 Triangle", &option_model_type, 7);
 
 	//_____________________________________________________________________________________________________________________________________________________________________
 	// Text box for input
@@ -49,7 +52,7 @@ void new_model_window::render_window()
 	std::istringstream iss(temp_str);
 	std::string line;
 
-	while (std::getline(iss, line, '\n')) 
+	while (std::getline(iss, line, '\n'))
 	{
 		input_data.push_back(line);
 	}

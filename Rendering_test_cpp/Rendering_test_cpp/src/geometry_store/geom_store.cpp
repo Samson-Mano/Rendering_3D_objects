@@ -10,7 +10,7 @@ geom_store::~geom_store()
 	// Empty Destructor
 }
 
-void geom_store::init(	options_window* op_window,	new_model_window* md_window)
+void geom_store::init(options_window* op_window, new_model_window* md_window)
 {
 	// Initialize
 	// Initialize the geometry parameters
@@ -107,34 +107,48 @@ void geom_store::load_model(const int& model_type, std::vector<std::string> inpu
 	std::filesystem::path current_path = std::filesystem::current_path();
 	std::cout << "Current working directory: " << current_path << std::endl;
 
-
 	if (this->mat_data.model_type == 0)
 	{
-		// Circular
-		model_file =std::ifstream("sphere_32.txt", std::ifstream::in);
+		// Square
+		model_file = std::ifstream("square_test.txt", std::ifstream::in);
 	}
 	else if (this->mat_data.model_type == 1)
 	{
-		// Rectange 1:1
-		model_file = std::ifstream("sphere_32_tri.txt", std::ifstream::in);
+		// Diamond
+		model_file = std::ifstream("diamond_14_testi.txt", std::ifstream::in);
 	}
 	else if (this->mat_data.model_type == 2)
 	{
-		// Rectangle 1:2
-		model_file = std::ifstream("sphere_64.txt", std::ifstream::in);
+		// Donut
+		model_file = std::ifstream("donut_testi.txt", std::ifstream::in);
 	}
 	else if (this->mat_data.model_type == 3)
 	{
-		// Rectangle 1:3
-		model_file = std::ifstream("sphere_64_tri.txt", std::ifstream::in);
+		// Sphere rect 32
+		model_file = std::ifstream("sphere_32.txt", std::ifstream::in);
 	}
 	else if (this->mat_data.model_type == 4)
 	{
-		// Circular triangle
+		// Sphere tri 32
+		model_file = std::ifstream("sphere_32_tri.txt", std::ifstream::in);
+	}
+	else if (this->mat_data.model_type == 5)
+	{
+		// Sphere rect 64
+		model_file = std::ifstream("sphere_64.txt", std::ifstream::in);
+	}
+	else if (this->mat_data.model_type == 6)
+	{
+		// Sphere tri 64
+		model_file = std::ifstream("sphere_64_tri.txt", std::ifstream::in);
+	}
+	else if (this->mat_data.model_type == 7)
+	{
+		// Sphere tri 128
 		model_file = std::ifstream("sphere_128_tri.txt", std::ifstream::in);
 	}
 
-	
+
 	// Read the Raw Data
 	// Read the entire file into a string
 	std::string file_contents((std::istreambuf_iterator<char>(model_file)),
@@ -190,11 +204,11 @@ void geom_store::load_model(const int& model_type, std::vector<std::string> inpu
 				double y = geom_parameters::roundToSixDigits(std::stod(splitValues[2])); // Node coordinate y
 				double z = geom_parameters::roundToSixDigits(std::stod(splitValues[3])); // Node coordinate z
 
-				glm::vec3 node_pt = glm::vec3(x, y,z);
+				glm::vec3 node_pt = glm::vec3(x, y, z);
 				node_pts_list.push_back(node_pt);
 
 				// Add the nodes
-				this->model_nodes.add_node(node_id, x,y,z);
+				this->model_nodes.add_node(node_id, x, y, z);
 				j++;
 			}
 
@@ -241,7 +255,7 @@ void geom_store::load_model(const int& model_type, std::vector<std::string> inpu
 			stopwatch_elapsed_str << stopwatch.elapsed();
 			std::cout << "Triangle Elements read completed at " << stopwatch_elapsed_str.str() << " secs" << std::endl;
 		}
-		
+
 
 		if (inpt_type == "*ELEMENT,TYPE=S4")
 		{

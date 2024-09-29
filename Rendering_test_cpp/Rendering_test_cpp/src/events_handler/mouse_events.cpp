@@ -15,8 +15,10 @@ void mouse_events::init(geom_store& geom)
 	// Intialize the geometry and tool window pointers
 	this->geom = &geom;
 
-	// Set default 3d view
-	arcball.setDefault(1);
+	//// Set default 3d view
+	// arcball.setDefault(1);
+
+	camera.setDefault(1);
 
 }
 
@@ -78,17 +80,20 @@ void mouse_events::rotation_operation_start(glm::vec2& loc)
 	is_rotate = true;
 	// Note the click point when the rotate operation start
 	// click_pt = loc;
-	arcball.OnMouseDown(get_rotation_screen_pt(loc));
+	// arcball.OnMouseDown(get_rotation_screen_pt(loc));
+
+	camera.OnMouseDown(get_rotation_screen_pt(loc));
 }
 
 void mouse_events::rotation_operation(glm::vec2& loc)
 {
 	// Rotate operation in progress
 	// total_rotation = prev_rotation + current_rotation;
-	arcball.OnMouseMove(get_rotation_screen_pt(loc));
+	// arcball.OnMouseMove(get_rotation_screen_pt(loc));
 
+	camera.OnMouseMove(get_rotation_screen_pt(loc));
 
-	glm::mat4 rot_matrix = arcball.getRotationMatrix();
+	glm::mat4 rot_matrix = camera.getViewMatrix(); // arcball.getRotationMatrix();
 	geom->update_model_rotate(rot_matrix);
 }
 
@@ -98,7 +103,9 @@ void mouse_events::rotation_operation_ends(glm::vec2& loc)
 	// Rotate operation complete
 	// prev_rotation = total_rotation;
 
-	arcball.OnMouseUp(get_rotation_screen_pt(loc));
+	camera.OnMouseUp(get_rotation_screen_pt(loc));
+
+	// arcball.OnMouseUp(get_rotation_screen_pt(loc));
 	is_rotate = false;
 }
 
@@ -174,10 +181,12 @@ void mouse_events::zoom_to_fit()
 
 void mouse_events::change_viewport()
 {
-	arcball.setDefault(viewType);
+	// arcball.setDefault(viewType);
+
+	camera.setDefault(viewType);
 
 	// Update rotate 
-	glm::mat4 rot_matrix = arcball.getRotationMatrix();
+	glm::mat4 rot_matrix = camera.getViewMatrix();  // arcball.getRotationMatrix();
 	geom->update_model_rotate(rot_matrix);
 
 	// Cycle back to 1

@@ -1,6 +1,7 @@
 #pragma once
 #include <glm/vec2.hpp>
 #include "arcball_transformation.h"
+#include "camera_events.h"
 #include "../geometry_store/geom_store.h"
 
 class mouse_events
@@ -56,5 +57,7 @@ private:
 
 	glm::vec2 get_rotation_screen_pt(glm::vec2& mouse_loc);
 
-	arcball_transformation arcball;
+	// arcball_transformation arcball;
+
+	camera_events camera;
 };

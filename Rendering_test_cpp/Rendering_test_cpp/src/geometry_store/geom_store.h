@@ -18,7 +18,6 @@
 
 // Geometry Objects
 #include "geometry_objects/dcel_mesh_data.h"
-#include "geometry_objects/dcel_dynmesh_data.h"
 #include "geometry_objects/dynamic_selrectangle_store.h"
 
 

@@ -145,6 +145,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\app_window.cpp" />
     <ClCompile Include="src\events_handler\arcball_transformation.cpp" />
+    <ClCompile Include="src\events_handler\camera_events.cpp" />
     <ClCompile Include="src\events_handler\file_events.cpp" />
     <ClCompile Include="src\events_handler\mouse_events.cpp" />
     <ClCompile Include="src\events_handler\mouse_event_handler.cpp" />
@@ -161,13 +162,8 @@
     <ClCompile Include="src\geometry_store\geometry_buffers\VertexArray.cpp" />
     <ClCompile Include="src\geometry_store\geometry_buffers\VertexBuffer.cpp" />
     <ClCompile Include="src\geometry_store\geometry_buffers\VertexBufferLayout.cpp" />
-    <ClCompile Include="src\geometry_store\geometry_objects\dcel_dynmesh_data.cpp" />
     <ClCompile Include="src\geometry_store\geometry_objects\dcel_mesh_data.cpp" />
-    <ClCompile Include="src\geometry_store\geometry_objects\dynamic_line_list_store.cpp" />
-    <ClCompile Include="src\geometry_store\geometry_objects\dynamic_point_list_store.cpp" />
-    <ClCompile Include="src\geometry_store\geometry_objects\dynamic_quad_list_store.cpp" />
     <ClCompile Include="src\geometry_store\geometry_objects\dynamic_selrectangle_store.cpp" />
-    <ClCompile Include="src\geometry_store\geometry_objects\dynamic_tri_list_store.cpp" />
     <ClCompile Include="src\geometry_store\geometry_objects\label_list_store.cpp" />
     <ClCompile Include="src\geometry_store\geometry_objects\line_list_store.cpp" />
     <ClCompile Include="src\geometry_store\geometry_objects\point_list_store.cpp" />
@@ -191,6 +187,12 @@
     <None Include="resources\dlls\freetype.dll" />
     <None Include="resources\dlls\glew32.dll" />
     <None Include="resources\dlls\glfw3.dll" />
+    <None Include="resources\shaders\mesh_frag_shader.frag" />
+    <None Include="resources\shaders\mesh_vert_shader.vert" />
+    <None Include="resources\shaders\selrect_frag_shader.frag" />
+    <None Include="resources\shaders\selrect_vert_shader.vert" />
+    <None Include="resources\shaders\text_frag_shader.frag" />
+    <None Include="resources\shaders\text_vert_shader.vert" />
     <None Include="resources\shaders\tri_point_vert_shader.frag" />
     <None Include="resources\shaders\tri_point_vert_shader.vert" />
   </ItemGroup>
@@ -206,6 +208,7 @@
   <ItemGroup>
     <ClInclude Include="src\app_window.h" />
     <ClInclude Include="src\events_handler\arcball_transformation.h" />
+    <ClInclude Include="src\events_handler\camera_events.h" />
     <ClInclude Include="src\events_handler\file_events.h" />
     <ClInclude Include="src\events_handler\mouse_events.h" />
     <ClInclude Include="src\events_handler\mouse_event_handler.h" />
@@ -222,13 +225,8 @@
     <ClInclude Include="src\geometry_store\geometry_buffers\VertexArray.h" />
     <ClInclude Include="src\geometry_store\geometry_buffers\VertexBuffer.h" />
     <ClInclude Include="src\geometry_store\geometry_buffers\VertexBufferLayout.h" />
-    <ClInclude Include="src\geometry_store\geometry_objects\dcel_dynmesh_data.h" />
     <ClInclude Include="src\geometry_store\geometry_objects\dcel_mesh_data.h" />
-    <ClInclude Include="src\geometry_store\geometry_objects\dynamic_line_list_store.h" />
-    <ClInclude Include="src\geometry_store\geometry_objects\dynamic_point_list_store.h" />
-    <ClInclude Include="src\geometry_store\geometry_objects\dynamic_quad_list_store.h" />
     <ClInclude Include="src\geometry_store\geometry_objects\dynamic_selrectangle_store.h" />
-    <ClInclude Include="src\geometry_store\geometry_objects\dynamic_tri_list_store.h" />
     <ClInclude Include="src\geometry_store\geometry_objects\label_list_store.h" />
     <ClInclude Include="src\geometry_store\geometry_objects\line_list_store.h" />
     <ClInclude Include="src\geometry_store\geometry_objects\point_list_store.h" />
@@ -251,6 +249,16 @@
     <ClInclude Include="src\ImGui\stb_implement.h" />
     <ClInclude Include="src\tool_window\new_model_window.h" />
     <ClInclude Include="src\tool_window\options_window.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="diamond_14_testi.txt" />
+    <Text Include="donut_testi.txt" />
+    <Text Include="sphere_128_tri.txt" />
+    <Text Include="sphere_32.txt" />
+    <Text Include="sphere_32_tri.txt" />
+    <Text Include="sphere_64.txt" />
+    <Text Include="sphere_64_tri.txt" />
+    <Text Include="square_test.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
