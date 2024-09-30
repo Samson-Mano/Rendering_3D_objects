@@ -368,8 +368,8 @@ void geom_store::update_model_matrix()
 	// Find the scale of the model (with 0.9 being the maximum used)
 	int max_dim = geom_param.window_width > geom_param.window_height ? geom_param.window_width : geom_param.window_height;
 
-	double normalized_screen_width = 1.8f * (static_cast<double>(geom_param.window_width) / static_cast<double>(max_dim));
-	double normalized_screen_height = 1.8f * (static_cast<double>(geom_param.window_height) / static_cast<double>(max_dim));
+	double normalized_screen_width = 1.6f * (static_cast<double>(geom_param.window_width) / static_cast<double>(max_dim));
+	double normalized_screen_height = 1.6f * (static_cast<double>(geom_param.window_height) / static_cast<double>(max_dim));
 
 	// geom_param.rotateTranslation =   glm::mat4_cast(geom_param.default_transl);
 

@@ -15,10 +15,8 @@ void mouse_events::init(geom_store& geom)
 	// Intialize the geometry and tool window pointers
 	this->geom = &geom;
 
-	//// Set default 3d view
-	// arcball.setDefault(1);
-
-	camera.setDefault(1);
+	// Set default 3d view
+	arcball.setDefault(1);
 
 }
 
@@ -80,20 +78,17 @@ void mouse_events::rotation_operation_start(glm::vec2& loc)
 	is_rotate = true;
 	// Note the click point when the rotate operation start
 	// click_pt = loc;
-	// arcball.OnMouseDown(get_rotation_screen_pt(loc));
-
-	camera.OnMouseDown(get_rotation_screen_pt(loc));
+	arcball.OnMouseDown(get_rotation_screen_pt(loc));
 }
 
 void mouse_events::rotation_operation(glm::vec2& loc)
 {
 	// Rotate operation in progress
 	// total_rotation = prev_rotation + current_rotation;
-	// arcball.OnMouseMove(get_rotation_screen_pt(loc));
+	arcball.OnMouseMove(get_rotation_screen_pt(loc));
 
-	camera.OnMouseMove(get_rotation_screen_pt(loc));
 
-	glm::mat4 rot_matrix = camera.getViewMatrix(); // arcball.getRotationMatrix();
+	glm::mat4 rot_matrix = arcball.getRotationMatrix();
 	geom->update_model_rotate(rot_matrix);
 }
 
@@ -103,9 +98,7 @@ void mouse_events::rotation_operation_ends(glm::vec2& loc)
 	// Rotate operation complete
 	// prev_rotation = total_rotation;
 
-	camera.OnMouseUp(get_rotation_screen_pt(loc));
-
-	// arcball.OnMouseUp(get_rotation_screen_pt(loc));
+	arcball.OnMouseUp(get_rotation_screen_pt(loc));
 	is_rotate = false;
 }
 
@@ -118,11 +111,11 @@ void mouse_events::select_operation_start(glm::vec2& loc, bool is_rightbutton)
 	click_pt = loc;
 }
 
-void mouse_events::select_operation(glm::vec2& click_loc,glm::vec2& current_loc)
+void mouse_events::select_operation(glm::vec2& click_loc, glm::vec2& current_loc)
 {
 	// Selection operation in progress
 	bool is_paint = true;
-	geom->update_selection_rectangle(click_loc, current_loc,is_paint,is_select,is_rightbutton);
+	geom->update_selection_rectangle(click_loc, current_loc, is_paint, is_select, is_rightbutton);
 }
 
 void mouse_events::select_operation_ends(glm::vec2& current_loc)
@@ -130,7 +123,7 @@ void mouse_events::select_operation_ends(glm::vec2& current_loc)
 	// Selection operation completes
 	bool is_paint = false;
 
-	geom->update_selection_rectangle(click_pt, current_loc, is_paint,is_select,is_rightbutton);
+	geom->update_selection_rectangle(click_pt, current_loc, is_paint, is_select, is_rightbutton);
 	is_select = false;
 }
 
@@ -181,12 +174,10 @@ void mouse_events::zoom_to_fit()
 
 void mouse_events::change_viewport()
 {
-	// arcball.setDefault(viewType);
-
-	camera.setDefault(viewType);
+	arcball.setDefault(viewType);
 
 	// Update rotate 
-	glm::mat4 rot_matrix = camera.getViewMatrix();  // arcball.getRotationMatrix();
+	glm::mat4 rot_matrix = arcball.getRotationMatrix();
 	geom->update_model_rotate(rot_matrix);
 
 	// Cycle back to 1
@@ -208,7 +199,7 @@ void mouse_events::left_mouse_click(glm::vec2& loc)
 		geom->set_nodal_constraint(loc, ct_window->constraint_type, ct_window->constraint_angle, true);
 	}
 
-	
+
 	if ((ld_window->is_add_load) == true)
 	{
 		// Add Loads
@@ -316,8 +307,8 @@ glm::vec2 mouse_events::get_rotation_screen_pt(glm::vec2& mouse_loc)
 	glm::vec2 mid = glm::vec2(geom->geom_param.window_width * 0.5f,
 		geom->geom_param.window_height * 0.5f);
 
-	float mouse_x = 4.0 * ((mouse_loc.x - mid.x) /max_drawing_size);
-	float mouse_y = 4.0 * ((mid.y - mouse_loc.y) /max_drawing_size);
+	float mouse_x = 4.0 * ((mouse_loc.x - mid.x) / max_drawing_size);
+	float mouse_y = 4.0 * ((mid.y - mouse_loc.y) / max_drawing_size);
 
 	return glm::vec2(mouse_x, mouse_y);
 }

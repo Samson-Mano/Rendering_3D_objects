@@ -145,7 +145,6 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\app_window.cpp" />
     <ClCompile Include="src\events_handler\arcball_transformation.cpp" />
-    <ClCompile Include="src\events_handler\camera_events.cpp" />
     <ClCompile Include="src\events_handler\file_events.cpp" />
     <ClCompile Include="src\events_handler\mouse_events.cpp" />
     <ClCompile Include="src\events_handler\mouse_event_handler.cpp" />
@@ -193,7 +192,7 @@
     <None Include="resources\shaders\selrect_vert_shader.vert" />
     <None Include="resources\shaders\text_frag_shader.frag" />
     <None Include="resources\shaders\text_vert_shader.vert" />
-    <None Include="resources\shaders\tri_point_vert_shader.frag" />
+    <None Include="resources\shaders\tri_point_frag_shader.frag" />
     <None Include="resources\shaders\tri_point_vert_shader.vert" />
   </ItemGroup>
   <ItemGroup>
@@ -208,7 +207,6 @@
   <ItemGroup>
     <ClInclude Include="src\app_window.h" />
     <ClInclude Include="src\events_handler\arcball_transformation.h" />
-    <ClInclude Include="src\events_handler\camera_events.h" />
     <ClInclude Include="src\events_handler\file_events.h" />
     <ClInclude Include="src\events_handler\mouse_events.h" />
     <ClInclude Include="src\events_handler\mouse_event_handler.h" />

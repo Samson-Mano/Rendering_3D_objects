@@ -18,8 +18,8 @@ void quad_list_store::init(geom_parameters* geom_param_ptr)
 	// Create the quadrilateral shader
 	std::filesystem::path shadersPath = geom_param_ptr->resourcePath;
 
-	quad_shader.create_shader((shadersPath.string() + "/resources/shaders/mesh_vert_shader.vert").c_str(),
-		(shadersPath.string() + "/resources/shaders/mesh_frag_shader.frag").c_str());
+	quad_shader.create_shader((shadersPath.string() + "/resources/shaders/tri_point_vert_shader.vert").c_str(),
+		(shadersPath.string() + "/resources/shaders/tri_point_frag_shader.frag").c_str());
 
 	quad_shader.setUniform("ptColor", geom_param_ptr->geom_colors.triangle_color);
 
@@ -133,7 +133,7 @@ tri_store* quad_list_store::get_quadrilateral_face341(const int& quad_id)
 
 void quad_list_store::set_buffer()
 {
-	// Define the quad vertices of the model for a node (3 position & 3 normal) 4 points
+	// Define the quad vertices of the model for a node (3 position & 3 normals ) 4 pt quadrilateral
 	const unsigned int quad_vertex_count = 6 * 4 * quad_count;
 	float* quad_vertices = new float[quad_vertex_count];
 
@@ -152,7 +152,7 @@ void quad_list_store::set_buffer()
 
 	VertexBufferLayout quad_pt_layout;
 	quad_pt_layout.AddFloat(3);  // Node center
-	quad_pt_layout.AddFloat(3);  // Node normal
+	quad_pt_layout.AddFloat(3);  // normals
 
 	unsigned int quad_vertex_size = quad_vertex_count * sizeof(float); // Size of the node_vertex
 
@@ -247,10 +247,10 @@ void quad_list_store::get_quad_buffer(quad_store* quad, float* quad_vertices, un
 	quad_vertices[quad_v_index + 1] = quad->tri123->edge1->start_pt->y_coord;
 	quad_vertices[quad_v_index + 2] = quad->tri123->edge1->start_pt->z_coord;
 
-	// Point normal
-	quad_vertices[quad_v_index + 3] = quad->face_normal.x;
-	quad_vertices[quad_v_index + 4] = quad->face_normal.y;
-	quad_vertices[quad_v_index + 5] = quad->face_normal.z;
+	// Other point 1
+	quad_vertices[quad_v_index + 3] = quad->tri123->face_normal.x;
+	quad_vertices[quad_v_index + 4] = quad->tri123->face_normal.y;
+	quad_vertices[quad_v_index + 5] = quad->tri123->face_normal.z;
 
 	// Iterate
 	quad_v_index = quad_v_index + 6;
@@ -261,10 +261,10 @@ void quad_list_store::get_quad_buffer(quad_store* quad, float* quad_vertices, un
 	quad_vertices[quad_v_index + 1] = quad->tri123->edge2->start_pt->y_coord;
 	quad_vertices[quad_v_index + 2] = quad->tri123->edge2->start_pt->z_coord;
 
-	// Point normal
-	quad_vertices[quad_v_index + 3] = quad->face_normal.x;
-	quad_vertices[quad_v_index + 4] = quad->face_normal.y;
-	quad_vertices[quad_v_index + 5] = quad->face_normal.z;
+	// Other point 1
+	quad_vertices[quad_v_index + 3] = quad->tri123->face_normal.x;
+	quad_vertices[quad_v_index + 4] = quad->tri123->face_normal.y;
+	quad_vertices[quad_v_index + 5] = quad->tri123->face_normal.z;
 
 	// Iterate
 	quad_v_index = quad_v_index + 6;
@@ -275,13 +275,13 @@ void quad_list_store::get_quad_buffer(quad_store* quad, float* quad_vertices, un
 	quad_vertices[quad_v_index + 1] = quad->tri341->edge1->start_pt->y_coord;
 	quad_vertices[quad_v_index + 2] = quad->tri341->edge1->start_pt->z_coord;
 
-	// Point normal
-	quad_vertices[quad_v_index + 3] = quad->face_normal.x;
-	quad_vertices[quad_v_index + 4] = quad->face_normal.y;
-	quad_vertices[quad_v_index + 5] = quad->face_normal.z;
+	// Other point 1
+	quad_vertices[quad_v_index + 3] = quad->tri341->face_normal.x;
+	quad_vertices[quad_v_index + 4] = quad->tri341->face_normal.y;
+	quad_vertices[quad_v_index + 5] = quad->tri341->face_normal.z;
 
 	// Iterate
-	quad_v_index = quad_v_index + 6;
+	quad_v_index = quad_v_index +6;
 
 	// Point 4
 	// Point location
@@ -289,10 +289,10 @@ void quad_list_store::get_quad_buffer(quad_store* quad, float* quad_vertices, un
 	quad_vertices[quad_v_index + 1] = quad->tri341->edge2->start_pt->y_coord;
 	quad_vertices[quad_v_index + 2] = quad->tri341->edge2->start_pt->z_coord;
 
-	// Point normal
-	quad_vertices[quad_v_index + 3] = quad->face_normal.x;
-	quad_vertices[quad_v_index + 4] = quad->face_normal.y;
-	quad_vertices[quad_v_index + 5] = quad->face_normal.z;
+	// Other point 1
+	quad_vertices[quad_v_index + 3] = quad->tri341->face_normal.x;
+	quad_vertices[quad_v_index + 4] = quad->tri341->face_normal.y;
+	quad_vertices[quad_v_index + 5] = quad->tri341->face_normal.z;
 
 	// Iterate
 	quad_v_index = quad_v_index + 6;

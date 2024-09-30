@@ -132,15 +132,12 @@
     <ClCompile Include="src\ImGui\stb_implement.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\events_handler\camera_events.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\dlls\glfw3.dll" />
     <None Include="resources\dlls\freetype.dll" />
     <None Include="resources\dlls\glew32.dll" />
-    <None Include="resources\shaders\tri_point_vert_shader.frag" />
+    <None Include="resources\shaders\tri_point_frag_shader.frag" />
     <None Include="resources\shaders\tri_point_vert_shader.vert" />
     <None Include="resources\shaders\mesh_vert_shader.vert" />
     <None Include="resources\shaders\mesh_frag_shader.frag" />
@@ -285,9 +282,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ImGui\stb_implement.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\events_handler\camera_events.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

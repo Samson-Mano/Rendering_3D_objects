@@ -151,6 +151,7 @@ void app_window::app_render()
 	glPointSize(geom.geom_param.point_size);
 	glLineWidth(geom.geom_param.line_width);
 
+	glFrontFace(GL_CW);  // Use clockwise winding
 
 	// Main rendering loop
 	while (!glfwWindowShouldClose(window))
