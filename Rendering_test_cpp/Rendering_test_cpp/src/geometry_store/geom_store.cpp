@@ -19,6 +19,25 @@ void geom_store::init(options_window* op_window, new_model_window* md_window)
 	// Intialize the selection rectangle
 	selection_rectangle.init(&geom_param);
 
+	label_modelMatrix.init(&geom_param);
+	label_panTranslation_matrix.init(&geom_param);
+	label_rotateTranslation_matrix.init(&geom_param);
+	label_zoomscale.init(&geom_param);
+
+	// View and model matrix
+	label_view_matrix.init(&geom_param);
+		label_viewxmodel_matrix.init(&geom_param);
+
+
+	// Set the basic matrices
+	label_modelMatrix.update_opengl_uniforms(true, false, false, false, false,false);
+	label_panTranslation_matrix.update_opengl_uniforms(true, false, false, false, false, false);
+	label_rotateTranslation_matrix.update_opengl_uniforms(true, false, false, false, false, false);
+	label_zoomscale.update_opengl_uniforms(true, false, false, false, false, false);
+
+	label_view_matrix.update_opengl_uniforms(true, false, false, false, false, false);
+	label_viewxmodel_matrix.update_opengl_uniforms(true, false, false, false, false, false);
+
 	is_geometry_set = false;
 
 
@@ -389,6 +408,32 @@ void geom_store::update_model_matrix()
 	// Update the model matrix
 	mesh_data.update_opengl_uniforms(true, false, false, false, true);
 
+	
+	// ________________________________________________________________________________________________________________
+	// Show the Model matrix
+	label_modelMatrix.clear_labels();
+
+	std::string data = "Model matrix:\n" + mat4ToString(geom_param.modelMatrix);
+
+	glm::vec3 data_loc = glm::vec3(0.0, 0.0, 0.0);
+	glm::vec3 data_label_color = glm::vec3(0.1f, 0.1f, 0.8f); // Dark Blue 
+
+	// Add the text
+	label_modelMatrix.add_text(data, data_loc, glm::vec3(0), data_label_color, 0, true, false);
+
+
+	label_modelMatrix.set_buffer();
+
+	// update opengl uniforms
+	label_modelMatrix.update_opengl_uniforms(true, false, false, false, false, false);
+	label_panTranslation_matrix.update_opengl_uniforms(true, false, false, false, false, false);
+	label_rotateTranslation_matrix.update_opengl_uniforms(true, false, false, false, false, false);
+	label_zoomscale.update_opengl_uniforms(true, false, false, false, false, false);
+
+
+	label_view_matrix.update_opengl_uniforms(true, false, false, false, false, false);
+	label_viewxmodel_matrix.update_opengl_uniforms(true, false, false, false, false, false);
+
 }
 
 void geom_store::update_model_zoomfit()
@@ -424,6 +469,23 @@ void geom_store::update_model_pan(glm::vec2& transl)
 	// Update the pan translation
 	mesh_data.update_opengl_uniforms(false, true, false, false, false);
 
+	// ________________________________________________________________________________________________________________
+	// Show the Pan Translation matrix
+	label_panTranslation_matrix.clear_labels();
+
+	std::string data = "Pan Translation matrix:\n" + mat4ToString(geom_param.panTranslation);
+
+	glm::vec3 data_loc = glm::vec3(0.0, -10.0, 0.0);
+	glm::vec3 data_label_color = glm::vec3(0.9, 0.6, 0.1); // Orange
+
+	// Add the text
+	label_panTranslation_matrix.add_text(data, data_loc, glm::vec3(0), data_label_color, 0, true, false);
+
+
+	label_panTranslation_matrix.set_buffer();
+
+	// update opengl uniforms
+	// label_panTranslation_matrix.update_opengl_uniforms(true, false, false, false, false, false);
 }
 
 void geom_store::update_model_rotate(glm::mat4& rotation_m)
@@ -436,6 +498,60 @@ void geom_store::update_model_rotate(glm::mat4& rotation_m)
 
 	// Update the rotate translation
 	mesh_data.update_opengl_uniforms(false, false, true, false, false);
+
+
+
+	// ________________________________________________________________________________________________________________
+	// Show the Rotate Translation matrix
+	label_rotateTranslation_matrix.clear_labels();
+
+	std::string data = "Rotate Translation matrix:\n" + mat4ToString(geom_param.rotateTranslation);
+
+	glm::vec3 data_loc = glm::vec3(0.0, -20.0, 0.0);
+	glm::vec3 data_label_color = glm::vec3(1.0, 0.0, 0.0); // (Red)
+
+	// Add the text
+	label_rotateTranslation_matrix.add_text(data, data_loc, glm::vec3(0), data_label_color, 0, true, false);
+
+
+	label_rotateTranslation_matrix.set_buffer();
+
+	//_____________________________________________
+	// Update the view and model matrix
+	label_view_matrix.clear_labels();
+
+
+	glm::mat4 scalingMatrix = glm::mat4(1.0) * static_cast<float>( geom_param.zoom_scale);
+	scalingMatrix[3][3] = 1.0f;
+
+	glm::mat4 viewMatrix = geom_param.rotateTranslation * scalingMatrix;
+
+	data = "View matrix:\n" + mat4ToString(viewMatrix);
+
+	data_loc = glm::vec3(0.0, -40.0, 0.0);
+	data_label_color = glm::vec3(0.54509f, 0.0f, 0.4f); // Dark Red
+
+	// Add the text
+	label_view_matrix.add_text(data, data_loc, glm::vec3(0), data_label_color, 0, true, false);
+
+
+	label_view_matrix.set_buffer();
+
+	//_________________
+	label_viewxmodel_matrix.clear_labels();
+
+	glm::mat4 viewmodelMatrix = geom_param.rotateTranslation * scalingMatrix * geom_param.modelMatrix;
+
+	 data = "View x Model matrix:\n" + mat4ToString(viewmodelMatrix);
+
+	 data_loc = glm::vec3(0.0, -50.0, 0.0);
+	data_label_color = glm::vec3(0.862745f, 0.078431f, 0.23529f); // Crimson
+
+	// Add the text
+	label_viewxmodel_matrix.add_text(data, data_loc, glm::vec3(0), data_label_color, 0, true, false);
+
+
+	label_viewxmodel_matrix.set_buffer();
 
 }
 
@@ -450,6 +566,61 @@ void geom_store::update_model_zoom(double& z_scale)
 
 	// Update the Zoom
 	mesh_data.update_opengl_uniforms(false, false, false, true, false);
+
+	// ________________________________________________________________________________________________________________
+	// Show the Zoom value
+	label_zoomscale.clear_labels();
+	std::stringstream ss;
+	ss << std::fixed << std::setw(6) << std::setprecision(6) << geom_param.zoom_scale;
+
+	std::string data = "Zoom value: \n" + ss.str();
+
+	glm::vec3 data_loc = glm::vec3(0.0, -30.0, 0.0);
+	glm::vec3 data_label_color = glm::vec3(0.0f, 0.50196f, 0.0f);  // (Red)
+
+	// Add the text
+	label_zoomscale.add_text(data, data_loc, glm::vec3(0), data_label_color, 0, true, false);
+
+
+	label_zoomscale.set_buffer();
+
+	//______________________________________________
+	// Update the view and model matrix
+	label_view_matrix.clear_labels();
+
+
+	glm::mat4 scalingMatrix = glm::mat4(1.0) * static_cast<float>(geom_param.zoom_scale);
+	scalingMatrix[3][3] = 1.0f;
+
+	glm::mat4 viewMatrix = geom_param.rotateTranslation * scalingMatrix;
+
+	data = "View matrix:\n" + mat4ToString(viewMatrix);
+
+	data_loc = glm::vec3(0.0, -40.0, 0.0);
+	data_label_color = glm::vec3(0.54509f, 0.0f, 0.4f); // Dark Red
+
+	// Add the text
+	label_view_matrix.add_text(data, data_loc, glm::vec3(0), data_label_color, 0, true, false);
+
+
+	label_view_matrix.set_buffer();
+
+	//_________________
+	label_viewxmodel_matrix.clear_labels();
+
+	glm::mat4 viewmodelMatrix = geom_param.rotateTranslation * scalingMatrix * geom_param.modelMatrix;
+
+	data = "View x Model matrix:\n" + mat4ToString(viewmodelMatrix);
+
+	data_loc = glm::vec3(0.0, -50.0, 0.0);
+	data_label_color = glm::vec3(0.862745f, 0.078431f, 0.23529f); // Crimson
+
+	// Add the text
+	label_viewxmodel_matrix.add_text(data, data_loc, glm::vec3(0), data_label_color, 0, true, false);
+
+
+	label_viewxmodel_matrix.set_buffer();
+
 }
 
 void geom_store::update_model_transperency(bool is_transparent)
@@ -530,28 +701,28 @@ void geom_store::paint_geometry()
 
 }
 
+std::string geom_store::mat4ToString(const glm::mat4& mat)
+{
+	std::stringstream ss;
+
+	// Loop through the rows and columns of the matrix
+	for (int i = 0; i < 4; ++i) {
+		ss << "| ";  // Add start of row delimiter
+		for (int j = 0; j < 4; ++j) {
+			// Set precision for floating point values and add each element
+			ss << std::fixed << std::setw(6) << std::setprecision(6) << mat[i][j] << " ";
+		}
+		ss << "|\n";  // End of row
+	}
+
+	return ss.str();  // Return the string
+}
+
 
 void geom_store::paint_model()
 {
 
-	//if (modal_solver_window->is_show_window == true ||
-	//	pulse_solver_window->is_show_window == true)
-	//{
-	//	if (modal_solver_window->is_show_window == true &&
-	//		modal_solver.is_modal_analysis_complete == true &&
-	//		modal_solver_window->show_undeformed_model == false)
-	//	{
-	//		// Modal Analysis complete, window open and user turned off model view
-	//		return;
-	//	}
-	//	//________________________________________________________________________________________
-	//	if (pulse_solver_window->is_show_window == true && pulse_solver.is_pulse_analysis_complete == true &&
-	//		pulse_solver_window->show_undeformed_model == false)
-	//	{
-	//		// Pulse analysis complete, window open and user turned off model view
-	//		return;
-	//	}
-	//}
+
 
 	//______________________________________________
 	// Paint the model
@@ -560,6 +731,7 @@ void geom_store::paint_model()
 		// Show the model elements
 		mesh_data.paint_triangles();
 		mesh_data.paint_quadrilaterals();
+
 	}
 
 	if (op_window->is_show_modeledeges == true)
@@ -589,6 +761,31 @@ void geom_store::paint_model()
 
 		glPointSize(geom_param.point_size);
 		glLineWidth(geom_param.line_width);
+	}
+
+
+	// Paint the model status text
+	if (op_window->is_show_viewdata == true)
+	{
+
+		// Paint the model matrix
+		label_modelMatrix.paint_text();
+
+		// Paint the pan matrix
+		label_panTranslation_matrix.paint_text();
+
+		// Paint the rotation matrix
+		label_rotateTranslation_matrix.paint_text();
+
+		// Paint the zoom value
+		label_zoomscale.paint_text();
+
+		// Paint the view matrix
+		label_view_matrix.paint_text();
+
+		// Paint the view_model matrix
+		label_viewxmodel_matrix.paint_text();
+
 	}
 
 

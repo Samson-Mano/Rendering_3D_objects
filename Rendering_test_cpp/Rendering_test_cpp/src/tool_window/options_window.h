@@ -18,7 +18,7 @@ public:
 	bool is_show_modeledeges = true; // Show model edges
 	bool is_show_modelelements = true; // show model elements
 	bool is_show_meshnormals = false; // show mesh normals
-
+	bool is_show_viewdata = false;
 
 	// Window
 	bool is_show_window = false;

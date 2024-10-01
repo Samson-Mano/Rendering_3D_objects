@@ -111,7 +111,7 @@ public:
 	glm::quat default_transl = glm::quat(0.4402697668541200f, 0.8215545196058330f, 0.2968766167094340f, -0.2075451231915790f); // Default translation
 
 	double geom_scale = 0.0; // Scale of the geometry
-	double geom_transparency = 1.0; // Value to control the geometry transparency
+	double geom_transparency = 1.0f; // Value to control the geometry transparency
 	double normalized_defl_scale = 0.0f; // Value of deflection scale
 	double defl_scale = 0.0f; // Value of deflection scale
 

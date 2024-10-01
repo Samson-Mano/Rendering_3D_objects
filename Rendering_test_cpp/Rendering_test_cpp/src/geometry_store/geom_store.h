@@ -19,6 +19,7 @@
 // Geometry Objects
 #include "geometry_objects/dcel_mesh_data.h"
 #include "geometry_objects/dynamic_selrectangle_store.h"
+#include "geometry_objects/label_list_store.h"
 
 
 class geom_store
@@ -59,6 +60,16 @@ private:
 	dynamic_selrectangle_store selection_rectangle;
 	dcel_mesh_data mesh_data;
 
+	// Model status
+	label_list_store label_modelMatrix;
+	label_list_store label_panTranslation_matrix;
+	label_list_store label_rotateTranslation_matrix;
+	label_list_store label_zoomscale;
+
+	label_list_store label_view_matrix; // view model matrix
+	label_list_store label_viewxmodel_matrix; // view model matrix
+
+
 	// Mesh objects
 	nodes_list_store model_nodes;
 	elementtri_list_store model_trielements;
@@ -72,6 +83,8 @@ private:
 	options_window* op_window = nullptr;
 
 	void paint_model(); // Paint the model
+
+	std::string mat4ToString(const glm::mat4& mat);
 
 };
 

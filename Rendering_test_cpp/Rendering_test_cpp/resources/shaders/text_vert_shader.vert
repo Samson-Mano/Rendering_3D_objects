@@ -2,7 +2,7 @@
 
 uniform mat4 modelMatrix;
 uniform mat4 panTranslation;
-uniform float zoomscale;
+uniform float zoomscale = 1.0f;
 uniform float transparency = 1.0f;
 uniform float deflscale;
 uniform float geom_scale;

@@ -1,34 +1,46 @@
 #version 330 core
-precision highp float;
 
-in vec3 v_Normal;         // Transformed normal from vertex shader
-in vec3 v_FragPos;        // Transformed position in world space from vertex shader
-in vec3 v_Color;          // Vertex color from vertex shader
-in float v_Transparency;  // Transparency from vertex shader
-in vec3 v_camPos;
-in vec3 v_lightPos;
+in vec3 position_w;
+in vec3 normal_c;
+in vec3 eye_direction_c;
+in vec3 light_direction_c;
+
+in vec3 v_Color;
+in float v_Transparency;
+
+uniform vec3 light_color;
+uniform vec3 light_position_w;
+
 
 out vec4 f_Color;         // Final color output
 
 void main() 
 {
 
-	// ambient lighting
-	float ambient = 0.20f;
+	float light_power = 180.0f;
+    
+    vec3 material_diffuse  = vec3( 0.2 );
+    vec3 material_ambient  = vec3( 0.12 ) * material_diffuse;
+    vec3 material_specular = vec3( 0.3 );
+    
+    float dist  = length( light_position_w - position_w );
+    
+    /* Angle of incidence (between normal and light direction) */
+    vec3 n      = normalize( normal_c );
+    vec3 l      = normalize( light_direction_c );
+    float cos_theta = clamp( dot( n, l ), 0, 1 );
+    
+    /* Amount of light reflected to camera / eye */
+    vec3 e          = normalize( eye_direction_c );
+    vec3 r          = reflect( -l, n );
+    float cos_alpha = clamp( dot( e, r ), 0, 1 );
+    
+    vec3 color;
 
-	// diffuse lighting
-	vec3 normal = normalize(v_Normal);
-	vec3 lightDirection = normalize(v_lightPos - v_FragPos);
-	float diffuse = max(dot(normal, lightDirection), 0.0f);
-
-	// specular lighting
-	float specularLight = 0.50f;
-	vec3 viewDirection = normalize(v_camPos - v_FragPos);
-	vec3 reflectionDirection = reflect(-lightDirection, normal);
-	float specAmount = pow(max(dot(viewDirection, reflectionDirection), 0.0f), 8);
-	float specular = specAmount * specularLight;
-
-	// outputs final color
-	f_Color = vec4(v_Color, 1.0f) * (diffuse + ambient + specular);
+    color.rgb = material_ambient;
+    color.rgb += material_diffuse  * light_color * light_power * cos_theta / (dist * dist);
+    color.rgb += material_specular * light_color * light_power * pow( cos_alpha , 5 ) / (dist * dist);
   
+    f_Color = vec4(color, 1.0);
+
 }

@@ -119,17 +119,30 @@ void label_list_store::update_opengl_uniforms(bool set_modelmatrix, bool set_pan
 {
 	if (set_modelmatrix == true)
 	{
+		// use different static_cast<float>(geom_param_ptr->geom_scale)
+		
+		float temp_gscale = geom_param_ptr->geom_scale;
+
 		// set the model matrix
 		label_shader.setUniform("geom_scale", static_cast<float>(geom_param_ptr->geom_scale));
 		label_shader.setUniform("transparency", 1.0f);
+		label_shader.setUniform("zoomscale",1.0f);
 
-		label_shader.setUniform("modelMatrix", geom_param_ptr->modelMatrix, false);
+
+		// Unit model matrix instead of geom_param_ptr->modelMatrix 
+		glm::mat4 m_matrix = geom_param_ptr->modelMatrix;
+		label_shader.setUniform("modelMatrix", m_matrix, false);
+
+
+		glm::mat4 p_matrix = glm::mat4(1.0);
+		label_shader.setUniform("panTranslation", p_matrix, false);
+
 	}
 
 	if (set_pantranslation == true)
 	{
-		// set the pan translation
-		label_shader.setUniform("panTranslation", geom_param_ptr->panTranslation, false);
+		//// set the pan translation
+		// label_shader.setUniform("panTranslation", geom_param_ptr->panTranslation, false);
 	}
 
 
@@ -141,20 +154,20 @@ void label_list_store::update_opengl_uniforms(bool set_modelmatrix, bool set_pan
 
 	if (set_zoomtranslation == true)
 	{
-		// set the zoom translation
-		label_shader.setUniform("zoomscale", static_cast<float>(geom_param_ptr->zoom_scale));
+		//// set the zoom translation
+		// label_shader.setUniform("zoomscale", static_cast<float>(geom_param_ptr->zoom_scale));
 	}
 
 	if (set_transparency == true)
 	{
-		// set the alpha transparency
-		label_shader.setUniform("transparency", static_cast<float>(geom_param_ptr->geom_transparency));
+		//// set the alpha transparency
+		// label_shader.setUniform("transparency", static_cast<float>(geom_param_ptr->geom_transparency));
 	}
 
 	if (set_deflscale == true)
 	{
-		// set the deflection scale
-		label_shader.setUniform("deflscale", static_cast<float>(geom_param_ptr->defl_scale));
+		//// set the deflection scale
+		// label_shader.setUniform("deflscale", static_cast<float>(geom_param_ptr->defl_scale));
 	}
 }
 

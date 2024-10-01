@@ -24,6 +24,8 @@ void options_window::init()
 	is_show_modelelements = true; // Show model elements
 	is_show_meshnormals = true; // Show mesh normals
 
+	is_show_viewdata = true; // Show the model view data
+
 	is_show_window = false;
 }
 
@@ -51,7 +53,9 @@ void options_window::render_window()
 	ImGui::Checkbox("Show Mesh Elements", &is_show_modelelements);
 	ImGui::Checkbox("Show Mesh Edges", &is_show_modeledeges);
 	ImGui::Checkbox("Show Mesh Normals", &is_show_meshnormals);
+	ImGui::Spacing();
 
+	ImGui::Checkbox("Show view matrices", &is_show_viewdata);
 
 	ImGui::Spacing();
 	ImGui::Spacing();
