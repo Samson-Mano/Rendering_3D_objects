@@ -179,6 +179,7 @@
     <ClCompile Include="src\ImGui\implot.cpp" />
     <ClCompile Include="src\ImGui\implot_items.cpp" />
     <ClCompile Include="src\ImGui\stb_implement.cpp" />
+    <ClCompile Include="src\tool_window\matrices_window.cpp" />
     <ClCompile Include="src\tool_window\new_model_window.cpp" />
     <ClCompile Include="src\tool_window\options_window.cpp" />
   </ItemGroup>
@@ -245,6 +246,7 @@
     <ClInclude Include="src\ImGui\imstb_truetype.h" />
     <ClInclude Include="src\ImGui\stb_image.h" />
     <ClInclude Include="src\ImGui\stb_implement.h" />
+    <ClInclude Include="src\tool_window\matrices_window.h" />
     <ClInclude Include="src\tool_window\new_model_window.h" />
     <ClInclude Include="src\tool_window\options_window.h" />
   </ItemGroup>

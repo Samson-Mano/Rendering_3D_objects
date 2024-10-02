@@ -16,6 +16,7 @@
 //---- File event handler
 #include "events_handler/file_events.h"
 ////____ Tool Window
+#include "tool_window/matrices_window.h"
 #include "tool_window/new_model_window.h"
 #include "tool_window/options_window.h"
 
@@ -40,6 +41,7 @@ public:
 	geom_store geom;
 
 	// Tool window variable
+	matrices_window mat_window;
 	new_model_window md_window;
 	options_window op_window;
 	

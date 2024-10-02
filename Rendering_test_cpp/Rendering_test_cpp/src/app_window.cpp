@@ -70,6 +70,7 @@ void app_window::init()
 	// Intialize tool windows
 	md_window.init(); // Model window
 	op_window.init(); // Option window
+	mat_window.init(&geom.geom_param); // Matrices window
 
 	geom.update_WindowDimension(window_width, window_height);
 	// Initialize the geometry (initialize only after model window is initialized)
@@ -226,11 +227,12 @@ void app_window::menu_events()
 		// Pre-Processing menu item
 		if (ImGui::BeginMenu("Pre-Processing"))
 		{
-			//if (ImGui::MenuItem("Intial Condition"))
-			//{
-			//	// Initial condition
-			//	inl_window.is_show_window = true;
-			//}
+			if (ImGui::MenuItem("Show GLM Matrices"))
+			{
+				// Matrices window
+				mat_window.is_show_window = true;
+
+			}
 			//if (ImGui::MenuItem("Nodal Loads"))
 			//{
 			//	// Nodal Loads
@@ -267,6 +269,8 @@ void app_window::menu_events()
 	//inl_window.render_window(); // initial condition window
 	//nd_load_window.render_window(); // Nodal load window
 	op_window.render_window(); // Option window
+	mat_window.render_window(); // Show matrices window
+
 	//sol_modal_window.render_window(); // Modal Analysis Solver window
 	//sol_pulse_window.render_window(); // Pulse Analysis Solver window
 

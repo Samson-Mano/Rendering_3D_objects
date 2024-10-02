@@ -132,6 +132,9 @@
     <ClCompile Include="src\ImGui\stb_implement.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\tool_window\matrices_window.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\dlls\glfw3.dll" />
@@ -282,6 +285,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ImGui\stb_implement.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tool_window\matrices_window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
