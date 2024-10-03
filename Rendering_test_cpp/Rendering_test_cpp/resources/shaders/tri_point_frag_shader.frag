@@ -1,46 +1,45 @@
 #version 330 core
 
-in vec3 position_w;
-in vec3 normal_c;
-in vec3 eye_direction_c;
-in vec3 light_direction_c;
-
+in vec3 vertPosition;
+in vec3 vertNormal;
+in vec3 viewPos;
 in vec3 v_Color;
 in float v_Transparency;
-
-uniform vec3 light_color;
-uniform vec3 light_position_w;
 
 
 out vec4 f_Color;         // Final color output
 
+
+vec3 unreal(vec3 x) 
+{
+  return x / (x + 0.155) * 1.019;
+}
+
+
+
 void main() 
 {
 
-	float light_power = 180.0f;
-    
-    vec3 material_diffuse  = vec3( 0.2 );
-    vec3 material_ambient  = vec3( 0.12 ) * material_diffuse;
-    vec3 material_specular = vec3( 0.3 );
-    
-    float dist  = length( light_position_w - position_w );
-    
-    /* Angle of incidence (between normal and light direction) */
-    vec3 n      = normalize( normal_c );
-    vec3 l      = normalize( light_direction_c );
-    float cos_theta = clamp( dot( n, l ), 0, 1 );
-    
-    /* Amount of light reflected to camera / eye */
-    vec3 e          = normalize( eye_direction_c );
-    vec3 r          = reflect( -l, n );
-    float cos_alpha = clamp( dot( e, r ), 0, 1 );
-    
-    vec3 color;
+	vec3 normal = normalize(vertNormal);
 
-    color.rgb = material_ambient;
-    color.rgb += material_diffuse  * light_color * light_power * cos_theta / (dist * dist);
-    color.rgb += material_specular * light_color * light_power * pow( cos_alpha , 5 ) / (dist * dist);
-  
-    f_Color = vec4(color, 1.0);
+	vec3 uniLightDir = -1.0 * normalize(vec3(0.0, 0.0, 1.0));
+
+	vec3 viewDir = normalize(viewPos - vertPosition);
+    vec3 halfDir = normalize(viewDir + uniLightDir);
+	
+	vec3 copper = pow(vec3(0xb6 / 255.0, 0x71 / 255.0, 0x30 / 255.0), vec3(2.2));
+    vec3 specColor = mix(copper, vec3(1, 1, 1), 0.1) * 1.5;
+    vec3 diffColor = copper;
+    float shineness = 40;
+	
+    float specular = pow(max(0, dot(halfDir, normal)), shineness);
+    float diffuse = max(0, dot(uniLightDir, normal));
+    float ambient = 0.05;
+    vec3 finalColor = (diffuse + ambient) * diffColor + specular * specColor;
+
+
+
+    finalColor = unreal(finalColor);
+    f_Color = vec4(finalColor, v_Transparency);
 
 }

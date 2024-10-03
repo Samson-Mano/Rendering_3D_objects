@@ -214,11 +214,13 @@ void quad_list_store::update_opengl_uniforms(bool set_modelmatrix, bool set_pant
 
 		// Light position
 		glm::vec3 light_position = glm::vec3(4, 4, 4);
-		quad_shader.setUniform("light_position_w", light_position);
+		quad_shader.setUniform("lightPos", light_position);
 
 		// Light color
 		glm::vec3 light_color = glm::vec3(1.0, 1.0, 1.0);
-		quad_shader.setUniform("light_color", light_color);
+		quad_shader.setUniform("lightColor", light_color);
+
+
 
 	}
 

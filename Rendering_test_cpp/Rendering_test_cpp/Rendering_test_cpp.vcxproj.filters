@@ -300,5 +300,6 @@
     <Text Include="sphere_64_tri.txt" />
     <Text Include="sphere_128_tri.txt" />
     <Text Include="square_test.txt" />
+    <Text Include="junk.txt" />
   </ItemGroup>
 </Project>

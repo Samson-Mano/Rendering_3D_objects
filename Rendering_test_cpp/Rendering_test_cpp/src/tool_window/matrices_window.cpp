@@ -88,8 +88,11 @@ void matrices_window::render_window()
 
 
     // Print Pan Translation Matrix
+    glm::mat4 panTranslationMatrix = geom_param_ptr->panTranslation;
+
+
     char pantranslMatrixBuffer[512]; // Adjust size as needed
-    std::string pantransMatrixString = formatMat4ToString(geom_param_ptr->panTranslation);
+    std::string pantransMatrixString = formatMat4ToString(panTranslationMatrix);
     strncpy_s(pantranslMatrixBuffer, pantransMatrixString.c_str(), sizeof(pantranslMatrixBuffer) - 1);
     pantranslMatrixBuffer[sizeof(pantranslMatrixBuffer) - 1] = '\0';
 
@@ -140,6 +143,21 @@ void matrices_window::render_window()
     ImGui::InputTextMultiline("##viewmodelMatrix", viewmodelMatrixBuffer, sizeof(viewmodelMatrixBuffer), ImVec2(customWidth, customHeight), ImGuiInputTextFlags_ReadOnly);
 
     ImGui::Separator();
+
+
+    // Print transpose(panTranslation) x View x Model Matrix
+    glm::mat4 panviewmodelMatrix = glm::transpose(panTranslationMatrix) *  viewmodelMatrix;
+
+    char panviewmodelMatrixBuffer[512]; // Adjust size as needed
+    std::string panviewmodelMatrixString = formatMat4ToString(panviewmodelMatrix);
+    strncpy_s(panviewmodelMatrixBuffer, panviewmodelMatrixString.c_str(), sizeof(panviewmodelMatrixBuffer) - 1);
+    panviewmodelMatrixBuffer[sizeof(panviewmodelMatrixBuffer) - 1] = '\0';
+
+    ImGui::Text("Pan^T x View x Model Matrix:");
+    ImGui::InputTextMultiline("##panviewmodelMatrix", panviewmodelMatrixBuffer, sizeof(panviewmodelMatrixBuffer), ImVec2(customWidth, customHeight), ImGuiInputTextFlags_ReadOnly);
+
+    ImGui::Separator();
+
 
 
     // Add a "Close" button

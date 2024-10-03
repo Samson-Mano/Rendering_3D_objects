@@ -253,6 +253,7 @@
   <ItemGroup>
     <Text Include="diamond_14_testi.txt" />
     <Text Include="donut_testi.txt" />
+    <Text Include="junk.txt" />
     <Text Include="sphere_128_tri.txt" />
     <Text Include="sphere_32.txt" />
     <Text Include="sphere_32_tri.txt" />

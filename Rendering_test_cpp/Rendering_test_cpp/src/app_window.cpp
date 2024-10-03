@@ -139,8 +139,8 @@ void app_window::app_render()
 	imgui_font = io.Fonts->AddFontFromFileTTF("./resources/fonts/FreeSans.ttf", 18);
 
 	// Z Clamping
-	glEnable(GL_DEPTH_CLAMP);
-	// glEnable(GL_DEPTH_TEST); // Enable depth testing
+	// glEnable(GL_DEPTH_CLAMP);
+	glEnable(GL_DEPTH_TEST); // Enable depth testing
 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);

@@ -24,7 +24,7 @@ void options_window::init()
 	is_show_modelelements = true; // Show model elements
 	is_show_meshnormals = true; // Show mesh normals
 
-	is_show_viewdata = true; // Show the model view data
+	is_show_viewdata = false; // Show the model view data
 
 	is_show_window = false;
 }
