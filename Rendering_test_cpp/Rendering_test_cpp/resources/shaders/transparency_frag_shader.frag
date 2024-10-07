@@ -3,8 +3,10 @@
 
 in vec3 vertNormal;
 in vec3 v_Color;
+in float v_Transparency;
 
 out vec4 f_Color; // Final color output
+
 
 vec3 unreal(vec3 x) 
 {
@@ -38,7 +40,9 @@ void main()
 
     // Tone mapping
     finalColor = unreal(finalColor);
-    f_Color = vec4(finalColor, 1.0f ); // v_Transparency
+
+
+    f_Color = vec4(finalColor, diffuse * v_Transparency);
 }
 
 

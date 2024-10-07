@@ -18,34 +18,22 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\events_handler\arcball_transformation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\events_handler\file_events.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\events_handler\mouse_event_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\events_handler\mouse_events.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\events_handler\Stopwatch_events.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\app_window.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\geometry_store\geom_parameters.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\geometry_store\geom_store.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\geometry_store\geometry_objects\dcel_mesh_data.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\geometry_store\geometry_objects\dynamic_selrectangle_store.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\geometry_store\geometry_objects\label_list_store.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\geometry_store\geometry_objects\line_list_store.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\geometry_store\geometry_objects\point_list_store.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\geometry_store\geometry_objects\quad_list_store.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\geometry_store\geometry_objects\tri_list_store.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\geometry_store\geometry_buffers\font_atlas.cpp">
@@ -72,37 +60,25 @@
     <ClCompile Include="src\geometry_store\geometry_buffers\VertexBufferLayout.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\geometry_store\fe_objects\elementline_list_store.cpp">
+    <ClCompile Include="src\geometry_store\geometry_objects\label_list_store.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\geometry_store\fe_objects\elementquad_list_store.cpp">
+    <ClCompile Include="src\geometry_store\geometry_objects\line_list_store.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\geometry_store\fe_objects\elementtri_list_store.cpp">
+    <ClCompile Include="src\geometry_store\geometry_objects\point_list_store.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\geometry_store\fe_objects\nodes_list_store.cpp">
+    <ClCompile Include="src\geometry_store\geometry_objects\quad_list_store.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\events_handler\arcball_transformation.cpp">
+    <ClCompile Include="src\geometry_store\geometry_objects\tri_list_store.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\events_handler\file_events.cpp">
+    <ClCompile Include="src\geometry_store\geom_parameters.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\events_handler\mouse_event_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\events_handler\mouse_events.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\events_handler\Stopwatch_events.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tool_window\new_model_window.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tool_window\options_window.cpp">
+    <ClCompile Include="src\geometry_store\geom_store.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ImGui\imgui.cpp">
@@ -132,26 +108,28 @@
     <ClCompile Include="src\ImGui\stb_implement.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\tool_window\matrices_window.cpp">
+    <ClCompile Include="src\tool_window\options_window.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tool_window\simulate_window.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\geometry_store\fe_objects\elementmass_list_store.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\geometry_store\fe_objects\elementspring_list_store.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\geometry_store\fe_objects\nodes_list_store.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="resources\dlls\glfw3.dll" />
     <None Include="resources\dlls\freetype.dll" />
     <None Include="resources\dlls\glew32.dll" />
-    <None Include="resources\shaders\tri_point_frag_shader.frag" />
-    <None Include="resources\shaders\tri_point_vert_shader.vert" />
-    <None Include="resources\shaders\mesh_vert_shader.vert" />
-    <None Include="resources\shaders\mesh_frag_shader.frag" />
-    <None Include="resources\shaders\selrect_frag_shader.frag" />
-    <None Include="resources\shaders\selrect_vert_shader.vert" />
-    <None Include="resources\shaders\text_frag_shader.frag" />
-    <None Include="resources\shaders\text_vert_shader.vert" />
-    <None Include="resources\shaders\dynmesh_frag_shader.frag" />
-    <None Include="resources\shaders\dynmesh_vert_shader.vert" />
-    <None Include="resources\shaders\transparency_vert_shader.vert" />
-    <None Include="resources\shaders\transparency_frag_shader.frag" />
+    <None Include="resources\dlls\glfw3.dll" />
+    <None Include="resources\shaders\default_frag_shader.frag" />
+    <None Include="resources\shaders\default_vert_shader.vert" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="resources\fonts\CanadaDBNormal.ttf" />
@@ -165,34 +143,22 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\events_handler\arcball_transformation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\events_handler\file_events.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\events_handler\mouse_event_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\events_handler\mouse_events.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\events_handler\Stopwatch_events.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="src\app_window.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\geometry_store\geom_store.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\geometry_store\geom_parameters.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\geometry_store\geometry_objects\dcel_mesh_data.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\geometry_store\geometry_objects\dynamic_selrectangle_store.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\geometry_store\geometry_objects\label_list_store.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\geometry_store\geometry_objects\line_list_store.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\geometry_store\geometry_objects\point_list_store.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\geometry_store\geometry_objects\quad_list_store.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\geometry_store\geometry_objects\tri_list_store.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\geometry_store\geometry_buffers\font_atlas.h">
@@ -219,37 +185,28 @@
     <ClInclude Include="src\geometry_store\geometry_buffers\VertexBufferLayout.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\geometry_store\fe_objects\elementline_list_store.h">
+    <ClInclude Include="src\geometry_store\geometry_objects\label_list_store.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\geometry_store\fe_objects\elementquad_list_store.h">
+    <ClInclude Include="src\geometry_store\geometry_objects\line_list_store.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\geometry_store\fe_objects\elementtri_list_store.h">
+    <ClInclude Include="src\geometry_store\geometry_objects\point_list_store.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\geometry_store\fe_objects\nodes_list_store.h">
+    <ClInclude Include="src\geometry_store\geometry_objects\quad_list_store.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\events_handler\arcball_transformation.h">
+    <ClInclude Include="src\geometry_store\geometry_objects\tri_list_store.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\events_handler\file_events.h">
+    <ClInclude Include="src\geometry_store\geom_parameters.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\events_handler\mouse_event_handler.h">
+    <ClInclude Include="src\geometry_store\geom_store.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\events_handler\mouse_events.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\events_handler\Stopwatch_events.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\tool_window\new_model_window.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\tool_window\options_window.h">
+    <ClInclude Include="src\ImGui\stb_implement.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ImGui\imconfig.h">
@@ -288,22 +245,20 @@
     <ClInclude Include="src\ImGui\stb_image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ImGui\stb_implement.h">
+    <ClInclude Include="src\tool_window\options_window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\tool_window\matrices_window.h">
+    <ClInclude Include="src\tool_window\simulate_window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="diamond_14_testi.txt" />
-    <Text Include="donut_testi.txt" />
-    <Text Include="sphere_32.txt" />
-    <Text Include="sphere_32_tri.txt" />
-    <Text Include="sphere_64.txt" />
-    <Text Include="sphere_64_tri.txt" />
-    <Text Include="sphere_128_tri.txt" />
-    <Text Include="square_test.txt" />
-    <Text Include="junk.txt" />
+    <ClInclude Include="src\geometry_store\fe_objects\elementmass_list_store.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\geometry_store\fe_objects\elementspring_list_store.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\geometry_store\fe_objects\nodes_list_store.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

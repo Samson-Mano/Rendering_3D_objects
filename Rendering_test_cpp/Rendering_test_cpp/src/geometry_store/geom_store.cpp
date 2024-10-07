@@ -166,7 +166,21 @@ void geom_store::load_model(const int& model_type, std::vector<std::string> inpu
 		// Sphere tri 128
 		model_file = std::ifstream("sphere_128_tri.txt", std::ifstream::in);
 	}
-
+	else if (this->mat_data.model_type == 8)
+	{
+		// Klein Bottle
+		model_file = std::ifstream("klein_bottle_sh.txt", std::ifstream::in);
+	}
+	else if (this->mat_data.model_type == 9)
+	{
+		// Donut Regular Quad
+		model_file = std::ifstream("donut_sh.txt", std::ifstream::in);
+	}
+	else if (this->mat_data.model_type == 10)
+	{
+		// Cylinder
+		model_file = std::ifstream("cylinder_sh.txt", std::ifstream::in);
+	}
 
 	// Read the Raw Data
 	// Read the entire file into a string

@@ -35,6 +35,9 @@ void new_model_window::render_window()
 	ImGui::RadioButton("Spherical Mesh - 64 Quad", &option_model_type, 5);
 	ImGui::RadioButton("Spherical Mesh - 64 Triangle", &option_model_type, 6);
 	ImGui::RadioButton("Spherical Mesh - 128 Triangle", &option_model_type, 7);
+	ImGui::RadioButton("Klein Bottle", &option_model_type, 8);
+	ImGui::RadioButton("Donut regular quad", &option_model_type, 9);
+	ImGui::RadioButton("Cylinder", &option_model_type, 10);
 
 	//_____________________________________________________________________________________________________________________________________________________________________
 	// Text box for input

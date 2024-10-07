@@ -59,7 +59,6 @@ void app_window::init()
 	// Set viewport size and register framebuffer resize callback
 	glfwGetFramebufferSize(window, &window_width, &window_height);
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
-	// geom.updateWindowDimension(window_width, window_height);
 
 	// Set the icon for the window
 	GLFWwindow_set_icon(window);
@@ -68,13 +67,13 @@ void app_window::init()
 	is_glwindow_success = true;
 
 	// Intialize tool windows
-	md_window.init(); // Model window
+	sim_window.init(); // Simulate window
 	op_window.init(); // Option window
-	mat_window.init(&geom.geom_param); // Matrices window
 
 	geom.update_WindowDimension(window_width, window_height);
+	
 	// Initialize the geometry (initialize only after model window is initialized)
-	geom.init(&op_window, &md_window);
+	geom.init(&op_window, &sim_window);
 
 	// Set the mouse button callback function with the user pointer pointing to the mouseHandler object
 	glfwSetWindowUserPointer(window, &mouse_Handler);
@@ -214,10 +213,10 @@ void app_window::menu_events()
 		// File menu item
 		if (ImGui::BeginMenu("File"))
 		{
-			if (ImGui::MenuItem("New model"))
+			if (ImGui::MenuItem("Simulate"))
 			{
 				// Model data menu
-				md_window.is_show_window = true;
+				sim_window.is_show_window = true;
 			}
 			if (ImGui::MenuItem("Options"))
 			{
@@ -231,55 +230,14 @@ void app_window::menu_events()
 			}
 			ImGui::EndMenu();
 		}
-		// Pre-Processing menu item
-		if (ImGui::BeginMenu("Pre-Processing"))
-		{
-			if (ImGui::MenuItem("Show GLM Matrices"))
-			{
-				// Matrices window
-				mat_window.is_show_window = true;
 
-			}
-			//if (ImGui::MenuItem("Nodal Loads"))
-			//{
-			//	// Nodal Loads
-			//	nd_load_window.is_show_window = true;
-			//}
-
-			ImGui::EndMenu();
-		}
-		// Solve
-		if (ImGui::BeginMenu("Solve"))
-		{
-			//if (ImGui::MenuItem("Modal Analysis Solve"))
-			//{
-			//	// Modal Analysis Solve
-			//	sol_modal_window.execute_modal_open = true;
-			//	sol_modal_window.is_show_window = true;
-			//}
-			//if (ImGui::MenuItem("Pulse Analysis Solve"))
-			//{
-			//	// Pulse Analysis Solve
-			//	sol_pulse_window.execute_pulse_open = true;
-			//	sol_pulse_window.is_show_window = true;
-			//}
-
-
-			ImGui::EndMenu();
-		}
 		// Add more menu items here as needed
 		ImGui::EndMainMenuBar();
 	}
 
 	//// Execute window render operation
-	md_window.render_window(); // model window
-	//inl_window.render_window(); // initial condition window
-	//nd_load_window.render_window(); // Nodal load window
+	sim_window.render_window(); // model window
 	op_window.render_window(); // Option window
-	mat_window.render_window(); // Show matrices window
-
-	//sol_modal_window.render_window(); // Modal Analysis Solver window
-	//sol_pulse_window.render_window(); // Pulse Analysis Solver window
 
 	// Pop the custom font after using it
 	ImGui::PopFont();

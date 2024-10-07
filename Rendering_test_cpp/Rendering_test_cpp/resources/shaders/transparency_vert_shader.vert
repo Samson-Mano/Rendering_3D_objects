@@ -12,6 +12,7 @@ layout(location = 1) in vec3 node_normal;
 
 out vec3 vertNormal;
 out vec3 v_Color;
+out float v_Transparency;
 
 void main()
 {
@@ -19,7 +20,8 @@ void main()
     vertNormal = normalize(transpose(inverse(mat3(viewMatrix * modelMatrix))) * node_normal);
 
     // Set the point color and transparency
-    v_Color = vertexColor;
+    v_Color = vertexColor; 
+    v_Transparency = vertexTransparency;
 
     // Final position with projection matrix (fixes clipping issues)
     gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(node_position, 1.0);
