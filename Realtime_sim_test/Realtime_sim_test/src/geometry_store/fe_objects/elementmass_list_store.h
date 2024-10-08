@@ -27,22 +27,6 @@ public:
 	~elementmass_list_store();
 
 
-	void init(geom_parameters* geom_param_ptr);
-	void add_pointmass(int& node_id, glm::vec2& ptmass_loc, glm::vec2 ptmass_defl, double& ptmass_val);
-	void delete_pointmass(int& node_id);
-	void set_buffer();
-	void paint_pointmass();
-	void paint_pointmass_label();
-	void update_geometry_matrices(bool set_modelmatrix, bool set_pantranslation, bool set_zoomtranslation, bool set_transparency, bool set_deflscale);
-
 private:
-	geom_parameters* geom_param_ptr = nullptr;
-	gBuffers ptmass_buffer;
-	Shader ptmass_shader;
-	Texture ptmass_texture;
-	label_list_store ptmass_value_labels;
-	double max_ptmass_value = 0.0;
 
-	void get_constraint_buffer(pointmass_data& ptm, float* ptmass_vertices, unsigned int& ptmass_v_index,
-		unsigned int* ptmass_indices, unsigned int& ptmass_i_index);
 };

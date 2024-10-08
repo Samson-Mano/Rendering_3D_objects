@@ -151,7 +151,6 @@
     <ClCompile Include="src\events_handler\Stopwatch_events.cpp" />
     <ClCompile Include="src\geometry_store\fe_objects\elementmass_list_store.cpp" />
     <ClCompile Include="src\geometry_store\fe_objects\elementspring_list_store.cpp" />
-    <ClCompile Include="src\geometry_store\fe_objects\nodes_list_store.cpp" />
     <ClCompile Include="src\geometry_store\geometry_buffers\font_atlas.cpp" />
     <ClCompile Include="src\geometry_store\geometry_buffers\gBuffers.cpp" />
     <ClCompile Include="src\geometry_store\geometry_buffers\IndexBuffer.cpp" />
@@ -162,8 +161,8 @@
     <ClCompile Include="src\geometry_store\geometry_buffers\VertexBufferLayout.cpp" />
     <ClCompile Include="src\geometry_store\geometry_objects\label_list_store.cpp" />
     <ClCompile Include="src\geometry_store\geometry_objects\line_list_store.cpp" />
+    <ClCompile Include="src\geometry_store\geometry_objects\obj_mesh_data.cpp" />
     <ClCompile Include="src\geometry_store\geometry_objects\point_list_store.cpp" />
-    <ClCompile Include="src\geometry_store\geometry_objects\quad_list_store.cpp" />
     <ClCompile Include="src\geometry_store\geometry_objects\tri_list_store.cpp" />
     <ClCompile Include="src\geometry_store\geom_parameters.cpp" />
     <ClCompile Include="src\geometry_store\geom_store.cpp" />
@@ -204,7 +203,6 @@
     <ClInclude Include="src\events_handler\Stopwatch_events.h" />
     <ClInclude Include="src\geometry_store\fe_objects\elementmass_list_store.h" />
     <ClInclude Include="src\geometry_store\fe_objects\elementspring_list_store.h" />
-    <ClInclude Include="src\geometry_store\fe_objects\nodes_list_store.h" />
     <ClInclude Include="src\geometry_store\geometry_buffers\font_atlas.h" />
     <ClInclude Include="src\geometry_store\geometry_buffers\gBuffers.h" />
     <ClInclude Include="src\geometry_store\geometry_buffers\IndexBuffer.h" />
@@ -215,8 +213,8 @@
     <ClInclude Include="src\geometry_store\geometry_buffers\VertexBufferLayout.h" />
     <ClInclude Include="src\geometry_store\geometry_objects\label_list_store.h" />
     <ClInclude Include="src\geometry_store\geometry_objects\line_list_store.h" />
+    <ClInclude Include="src\geometry_store\geometry_objects\obj_mesh_data.h" />
     <ClInclude Include="src\geometry_store\geometry_objects\point_list_store.h" />
-    <ClInclude Include="src\geometry_store\geometry_objects\quad_list_store.h" />
     <ClInclude Include="src\geometry_store\geometry_objects\tri_list_store.h" />
     <ClInclude Include="src\geometry_store\geom_parameters.h" />
     <ClInclude Include="src\geometry_store\geom_store.h" />

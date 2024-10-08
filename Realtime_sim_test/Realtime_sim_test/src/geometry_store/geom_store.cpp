@@ -16,22 +16,77 @@ void geom_store::init(options_window* op_window, simulate_window* sim_window)
 	// Initialize the geometry parameters
 	geom_param.init();
 
-	// Intialize the selection rectangle
-	selection_rectangle.init(&geom_param);
-
+	// Label 
 	label_simulation_data.init(&geom_param);
 
 	// Set the basic matrices
 	label_simulation_data.update_opengl_uniforms(true, false, false, false, false,false);
 
+	//_____________________________________________________________________________________
+	// Create the model boundary
+	boundary_lines.init(&geom_param, true, true, false);
 
+	
 	is_geometry_set = false;
 
 
 	// Add the window pointers
 	this->sim_window = sim_window; // Simulate window
 	this->op_window = op_window; // Option window
+
+
+	initialize_model();
 }
+
+
+void geom_store::initialize_model()
+{
+	// Intialize the model
+	std::vector< glm::vec3> bndry_pts_list;
+
+	bndry_pts_list.push_back({-1000,-1000,0});
+	bndry_pts_list.push_back({ -1000,1000,0 });
+	bndry_pts_list.push_back({ 1000,1000,0 });
+	bndry_pts_list.push_back({ 1000,-1000,0 });
+
+	// Add the boundary points
+	boundary_lines.add_mesh_point(0, -1000, -1000);
+	boundary_lines.add_mesh_point(1, -1000, 1000);
+	boundary_lines.add_mesh_point(2, 1000, 1000);
+	boundary_lines.add_mesh_point(3, 1000, -1000);
+
+	// Add the boundary lines
+	boundary_lines.add_mesh_lines(0, 0, 1);
+	boundary_lines.add_mesh_lines(1, 1, 2);
+	boundary_lines.add_mesh_lines(2, 2, 3);
+	boundary_lines.add_mesh_lines(3, 3, 0);
+
+
+
+	is_geometry_set = true;
+
+
+
+	// Set the boundary of the geometry
+	std::pair<glm::vec3, glm::vec3> result = geom_parameters::findMinMaxXY(bndry_pts_list);
+	this->geom_param.min_b = result.first;
+	this->geom_param.max_b = result.second;
+	this->geom_param.geom_bound = geom_param.max_b - geom_param.min_b;
+
+	// Set the center of the geometry
+	this->geom_param.center = geom_parameters::findGeometricCenter(bndry_pts_list);
+
+	// Set the geometry
+	update_model_matrix();
+	update_model_zoomfit();
+
+
+	// Set the geometry buffers
+	this->boundary_lines.set_buffer();
+
+}
+
+
 
 void geom_store::fini()
 {
@@ -64,8 +119,6 @@ void geom_store::update_model_matrix()
 	double normalized_screen_width = 1.6f * (static_cast<double>(geom_param.window_width) / static_cast<double>(max_dim));
 	double normalized_screen_height = 1.6f * (static_cast<double>(geom_param.window_height) / static_cast<double>(max_dim));
 
-	// geom_param.rotateTranslation =   glm::mat4_cast(geom_param.default_transl);
-
 
 	geom_param.geom_scale = std::min(normalized_screen_width / geom_param.geom_bound.x,
 		normalized_screen_height / geom_param.geom_bound.y);
@@ -80,7 +133,7 @@ void geom_store::update_model_matrix()
 	geom_param.modelMatrix = g_transl * glm::scale(glm::mat4(1.0f), glm::vec3(static_cast<float>(geom_param.geom_scale)));
 
 	// Update the model matrix
-	mesh_data.update_opengl_uniforms(true, false, false, false, true);
+	boundary_lines.update_opengl_uniforms(true, false, true);
 
 	
 }
@@ -100,7 +153,7 @@ void geom_store::update_model_zoomfit()
 	geom_param.zoom_scale = 1.0f;
 
 	// Update the zoom scale and pan translation
-	mesh_data.update_opengl_uniforms(false, true, true, true, false);
+	boundary_lines.update_opengl_uniforms(false, true, false);
 
 }
 
@@ -116,21 +169,7 @@ void geom_store::update_model_pan(glm::vec2& transl)
 	geom_param.panTranslation[1][3] = transl.y;
 
 	// Update the pan translation
-	mesh_data.update_opengl_uniforms(false, true, false, false, false);
-
-	
-}
-
-void geom_store::update_model_rotate(glm::mat4& rotation_m)
-{
-	if (is_geometry_set == false)
-		return;
-
-	// Rotate the geometry
-	geom_param.rotateTranslation = rotation_m;
-
-	// Update the rotate translation
-	mesh_data.update_opengl_uniforms(false, false, true, false, false);
+	boundary_lines.update_opengl_uniforms(false, true, false);
 
 	
 }
@@ -145,7 +184,7 @@ void geom_store::update_model_zoom(double& z_scale)
 	geom_param.zoom_scale = z_scale;
 
 	// Update the Zoom
-	mesh_data.update_opengl_uniforms(false, false, false, true, false);
+	boundary_lines.update_opengl_uniforms(false, true, false);
 
 
 }
@@ -167,7 +206,7 @@ void geom_store::update_model_transperency(bool is_transparent)
 	}
 
 	// Update the model transparency
-	mesh_data.update_opengl_uniforms(false, false, false, false, true);
+	boundary_lines.update_opengl_uniforms(false, false, true);
 
 }
 
@@ -206,41 +245,43 @@ void geom_store::paint_geometry()
 void geom_store::paint_model()
 {
 
+	// Paint the boundaries
+	boundary_lines.paint_static_mesh();
 
 
-	//______________________________________________
-	// Paint the model
-	if (op_window->is_show_modelelements == true)
-	{
-		// Show the model elements
-		mesh_data.paint_triangles();
-		mesh_data.paint_quadrilaterals();
+	////______________________________________________
+	//// Paint the model
+	//if (op_window->is_show_modelelements == true)
+	//{
+	//	// Show the model elements
+	//	mesh_data.paint_triangles();
+	//	mesh_data.paint_quadrilaterals();
 
-	}
+	//}
 
-	if (op_window->is_show_modeledeges == true)
-	{
-		// Show the model edges
-		mesh_data.paint_mesh_edges();
-	}
-
-
-	if (op_window->is_show_inlcondition == true)
-	{
-		// Show the node initial condition
-		// Initial Displacement
-		glPointSize(geom_param.selected_point_size);
-		glLineWidth(geom_param.selected_line_width);
-
-		//node_inldispl.paint_inlcond();
-
-		//// Initial Velocity
-		//node_inlvelo.paint_inlcond();
+	//if (op_window->is_show_modeledeges == true)
+	//{
+	//	// Show the model edges
+	//	mesh_data.paint_mesh_edges();
+	//}
 
 
-		glPointSize(geom_param.point_size);
-		glLineWidth(geom_param.line_width);
-	}
+	//if (op_window->is_show_inlcondition == true)
+	//{
+	//	// Show the node initial condition
+	//	// Initial Displacement
+	//	glPointSize(geom_param.selected_point_size);
+	//	glLineWidth(geom_param.selected_line_width);
+
+	//	//node_inldispl.paint_inlcond();
+
+	//	//// Initial Velocity
+	//	//node_inlvelo.paint_inlcond();
+
+
+	//	glPointSize(geom_param.point_size);
+	//	glLineWidth(geom_param.line_width);
+	//}
 
 
 }

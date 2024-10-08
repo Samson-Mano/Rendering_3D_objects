@@ -198,7 +198,7 @@ namespace Rendering_3D_objects
             GL.LineWidth(2.73f);
             g_control.set_opengl_shader("linegeometry");
             // geom.set_openTK_objects();
-            geom.paint_line_objects();
+           // geom.paint_line_objects();
 
             //// Display the label
             //g_control.set_opengl_shader(1);

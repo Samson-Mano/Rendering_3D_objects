@@ -15,6 +15,7 @@
 #include "fe_objects/elementspring_list_store.h"
 
 // Geometry Objects
+#include "geometry_objects/obj_mesh_data.h"
 #include "geometry_objects/label_list_store.h"
 
 
@@ -39,7 +40,6 @@ public:
 	void update_model_matrix();
 	void update_model_zoomfit();
 	void update_model_pan(glm::vec2& transl);
-	void update_model_rotate(glm::mat4& rotation_m);
 	void update_model_zoom(double& z_scale);
 	void update_model_transperency(bool is_transparent);
 
@@ -61,6 +61,11 @@ private:
 	// Window pointers
 	simulate_window* sim_window = nullptr;
 	options_window* op_window = nullptr;
+
+	// Other geometry objects
+	obj_mesh_data boundary_lines;
+
+	void initialize_model(); // Initialize the model
 
 	void paint_model(); // Paint the model
 

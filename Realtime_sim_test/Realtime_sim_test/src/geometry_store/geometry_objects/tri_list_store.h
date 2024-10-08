@@ -12,9 +12,6 @@ struct tri_store
 	line_store* edge2 = nullptr; // Triangle edge 2
 	line_store* edge3 = nullptr; // Triangle edge 3
 
-	// face normal
-	glm::vec3 face_normal = glm::vec3(0); // Face normal of the triangle
-	glm::vec3 geom_center = glm::vec3(0); // Geometric center of the triangle
 };
 
 
@@ -34,14 +31,21 @@ public:
 	tri_store* get_triangle(const int& tri_id);
 
 	void set_buffer();
-	void paint_triangles();
+	void paint_static_triangles();
+	void paint_dynamic_triangles();
+
 	void clear_triangles();
 	void update_opengl_uniforms(bool set_modelmatrix, bool set_viewmatrix, bool set_transparency);
 private:
 	gBuffers tri_buffer;
 	Shader tri_shader;
 
-	void get_tri_buffer(tri_store* tri, float* tri_vertices, unsigned int& tri_v_index, unsigned int* tri_vertex_indices, unsigned int& tri_i_index);
 
+	void update_buffer();
+	void get_tri_vertex_buffer(tri_store* tri, float* tri_vertices, unsigned int& tri_v_index);
+	void get_tri_index_buffer(unsigned int* tri_vertex_indices, unsigned int& tri_i_index);
 
 };
+
+
+

@@ -10,11 +10,10 @@ struct point_store
 	int point_id = -1; // Point ID
 	double x_coord = 0.0; // x coordinate
 	double y_coord = 0.0; // y coordinate
-	double z_coord = 0.0; // z coordinate
 
-	glm::vec3 pt_coord() const
+	glm::vec2 pt_coord() const
 	{
-		return glm::vec3(x_coord, y_coord, z_coord);
+		return glm::vec2(x_coord, y_coord);
 	}
 };
 
@@ -33,18 +32,22 @@ public:
 	void add_point(const int& point_id, const double& x_coord, const double& y_coord );
 	point_store* get_point(const int& point_id);
 
+	void update_point(const int& point_id, const double& x_coord, const double& y_coord);
+
 	void set_buffer();
-	void paint_points();
+	void paint_static_points();
+	void paint_dynamic_points();
+
 	void clear_points();
-	void update_opengl_uniforms(bool set_modelmatrix, bool set_pantranslation, bool set_rotatetranslation,
-		bool set_zoomtranslation, bool set_transparency);
-	void update_point_color(const glm::vec3& pt_color);
+	void update_opengl_uniforms(bool set_modelmatrix, bool set_viewmatrix, bool set_transparency);
 
 private:
 	gBuffers point_buffer;
 	Shader point_shader;
 
-	void get_point_buffer(point_store& pt,float* point_vertices, unsigned int& point_v_index, unsigned int* point_indices, unsigned int& point_i_index);
+	void update_buffer();
+	void get_point_vertex_buffer(point_store& pt, float* point_vertices, unsigned int& point_v_index);
+	void get_point_index_buffer(unsigned int* point_indices, unsigned int& point_i_index);
 };
 
 
