@@ -22,10 +22,6 @@ void geom_store::init(options_window* op_window, simulate_window* sim_window)
 	// Set the basic matrices
 	label_simulation_data.update_opengl_uniforms(true, false, false, false, false,false);
 
-	//_____________________________________________________________________________________
-	// Create the model boundary
-	boundary_lines.init(&geom_param, true, true, false);
-
 	
 	is_geometry_set = false;
 
@@ -49,6 +45,10 @@ void geom_store::initialize_model()
 	bndry_pts_list.push_back({ 1000,1000,0 });
 	bndry_pts_list.push_back({ 1000,-1000,0 });
 
+	//_____________________________________________________________________________________
+// Create the model boundary
+	boundary_lines.init(&geom_param, true, true, false);
+
 	// Add the boundary points
 	boundary_lines.add_mesh_point(0, -1000, -1000);
 	boundary_lines.add_mesh_point(1, -1000, 1000);
@@ -60,6 +60,14 @@ void geom_store::initialize_model()
 	boundary_lines.add_mesh_lines(1, 1, 2);
 	boundary_lines.add_mesh_lines(2, 2, 3);
 	boundary_lines.add_mesh_lines(3, 3, 0);
+
+
+	// Create the Fixed end of spring mass system
+	model_fixedends.init(&geom_param);
+
+	model_fixedends.add_fixed_end(glm::vec2(0.0, -800.0), 90.0);
+
+
 
 
 
@@ -83,6 +91,7 @@ void geom_store::initialize_model()
 
 	// Set the geometry buffers
 	this->boundary_lines.set_buffer();
+
 
 }
 
@@ -134,7 +143,7 @@ void geom_store::update_model_matrix()
 
 	// Update the model matrix
 	boundary_lines.update_opengl_uniforms(true, false, true);
-
+	model_fixedends.update_opengl_uniforms(true, false, true);
 	
 }
 
@@ -146,14 +155,12 @@ void geom_store::update_model_zoomfit()
 	// Set the pan translation matrix
 	geom_param.panTranslation = glm::mat4(1.0f);
 
-	// Rotation Matrix
-	// geom_param.rotateTranslation = glm::mat4( glm::mat4_cast(0.4402697668541200f, 0.8215545196058330f, 0.2968766167094340f, -0.2075451231915790f));
-
 	// Set the zoom scale
 	geom_param.zoom_scale = 1.0f;
 
 	// Update the zoom scale and pan translation
 	boundary_lines.update_opengl_uniforms(false, true, false);
+	model_fixedends.update_opengl_uniforms(false, true, false);
 
 }
 
@@ -170,7 +177,7 @@ void geom_store::update_model_pan(glm::vec2& transl)
 
 	// Update the pan translation
 	boundary_lines.update_opengl_uniforms(false, true, false);
-
+	model_fixedends.update_opengl_uniforms(false, true, false);
 	
 }
 
@@ -185,7 +192,7 @@ void geom_store::update_model_zoom(double& z_scale)
 
 	// Update the Zoom
 	boundary_lines.update_opengl_uniforms(false, true, false);
-
+	model_fixedends.update_opengl_uniforms(false, true, false);
 
 }
 
@@ -207,6 +214,7 @@ void geom_store::update_model_transperency(bool is_transparent)
 
 	// Update the model transparency
 	boundary_lines.update_opengl_uniforms(false, false, true);
+	model_fixedends.update_opengl_uniforms(false, false, true);
 
 }
 
@@ -248,6 +256,7 @@ void geom_store::paint_model()
 	// Paint the boundaries
 	boundary_lines.paint_static_mesh();
 
+	model_fixedends.paint_fixed_end();
 
 	////______________________________________________
 	//// Paint the model

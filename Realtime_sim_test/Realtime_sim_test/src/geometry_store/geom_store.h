@@ -11,6 +11,7 @@
 #include "../tool_window/simulate_window.h"
 
 // FE Objects
+#include "fe_objects/elementfixedend_list_store.h"
 #include "fe_objects/elementmass_list_store.h"
 #include "fe_objects/elementspring_list_store.h"
 
@@ -52,6 +53,7 @@ private:
 	label_list_store label_simulation_data;
 	
 	// Mesh objects
+	elementfixedend_list_store model_fixedends;
 	elementmass_list_store model_mass;
 	elementspring_list_store model_spring;
 	
