@@ -79,6 +79,8 @@ public:
 	const float font_size = static_cast<float>(12.0f * std::pow(10, -5));
 	const float node_circle_radii = 0.005f;
 
+	const float spring_element_width = 10.0f;
+
 	// Geometry size
 	const float point_size = 2.4f;
 	const float selected_point_size = 4.4f;
@@ -120,7 +122,7 @@ public:
 	glm::mat4 viewMatrix = glm::mat4(1.0f); // View matrix
 	glm::mat4 projectionMatrix = glm::mat4(1.0f); // Projection matrix
 	glm::mat4 panTranslation = glm::mat4(1.0f); // Pan translataion
-	glm::mat4 rotateTranslation = glm::mat4(1.0f); // Rotate translation
+	// glm::mat4 rotateTranslation = glm::mat4(1.0f); // Rotate translation
 	double zoom_scale = 0.0; // Zoom scale
 
 	// Standard colors

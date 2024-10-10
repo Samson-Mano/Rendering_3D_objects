@@ -35,7 +35,7 @@ void geom_parameters::init()
 	// copper color
 	// glm::vec3 copper = glm::pow(glm::vec3(0xb6 / 255.0f, 0x71 / 255.0f, 0x30 / 255.0f), glm::vec3(2.2f));
 
-	glm::vec3 mesh_color = glm::vec3(0.476f, 0.167f, 0.025f);
+	glm::vec3 mesh_color = glm::vec3(0.476f, 0.167f, 0.025f); 
 
 	geom_colors.point_color = mesh_color; // Light Red glm::vec3(0.8f, 0.2f, 0.2f);
 	geom_colors.edge_color = glm::vec3(0.90196f, 0.90196f, 0.98039f); 
@@ -64,14 +64,15 @@ void geom_parameters::init()
 	this->projectionMatrix = glm::ortho(left, right, bottom, top, nearPlane, farPlane);
 
 	// Set the default rotation matrix
-		// Important flip the rotation because the view direction and ligt direction are -1 Z-direction
-	glm::mat4 flipMatrix = glm::mat4(1.0f);
-	flipMatrix[0][0] = -1.0f; // To flip the X-axis (left-right)
-	flipMatrix[1][1] = -1.0f; // To flip the Y-axis (top-bottom)
+	// Important flip the rotation because the view direction and ligt direction are -1 Z-direction
+		
+	//glm::mat4 flipMatrix = glm::mat4(1.0f);
+	//flipMatrix[0][0] = -1.0f; // To flip the X-axis (left-right)
+	//flipMatrix[1][1] = -1.0f; // To flip the Y-axis (top-bottom)
 
-	glm::mat4 rotationMatrix = glm::mat4_cast(default_transl);
+	//glm::mat4 rotationMatrix = glm::mat4_cast(default_transl);
 
-	this->rotateTranslation = flipMatrix * rotationMatrix;
+	// this->rotateTranslation = flipMatrix * rotationMatrix;
 
 //	Theme 1:
 //

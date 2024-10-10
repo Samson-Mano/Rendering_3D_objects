@@ -31,6 +31,8 @@ public:
 	tri_store* get_triangle(const int& tri_id);
 
 	void set_buffer();
+	void set_tri_color(const glm::vec3& tri_color);
+
 	void paint_static_triangles();
 	void paint_dynamic_triangles();
 

@@ -21,11 +21,15 @@ void line_list_store::init(geom_parameters* geom_param_ptr)
 	line_shader.create_shader((shadersPath.string() + "/resources/shaders/default_vert_shader.vert").c_str(),
 		(shadersPath.string() + "/resources/shaders/default_frag_shader.frag").c_str());
 
+	// Default color
 	line_shader.setUniform("vertexColor", geom_param_ptr->geom_colors.edge_color);
 
 	// Delete all the labels
 	clear_lines();
 }
+
+
+
 
 void line_list_store::add_line(const int& line_id, point_store* start_pt, point_store* end_pt)
 {
@@ -91,6 +95,14 @@ void line_list_store::set_buffer()
 	update_buffer();
 
 }
+
+void line_list_store::set_line_color(const glm::vec3& line_color)
+{
+	// Set the line color
+	line_shader.setUniform("vertexColor", line_color);
+
+}
+
 
 void line_list_store::paint_static_lines()
 {

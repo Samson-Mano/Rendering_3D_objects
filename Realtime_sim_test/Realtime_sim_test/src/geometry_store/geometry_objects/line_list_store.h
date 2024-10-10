@@ -30,6 +30,8 @@ public:
 	line_store* get_line(const int& line_id);
 
 	void set_buffer();
+	void set_line_color(const glm::vec3& line_color);
+
 	void paint_static_lines();
 	void paint_dynamic_lines();
 

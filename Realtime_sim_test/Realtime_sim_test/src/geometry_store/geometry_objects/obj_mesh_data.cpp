@@ -112,6 +112,15 @@ void obj_mesh_data::update_mesh_point(const int& point_id, const double& x_coord
 
 }
 
+void obj_mesh_data::update_mesh_color(const glm::vec3& point_color, const glm::vec3& line_color, const glm::vec3& tri_color)
+{
+	// Set the color of the mesh
+	this->mesh_points.set_point_color(point_color);
+	this->mesh_lines.set_line_color(line_color);
+	this->mesh_tris.set_tri_color(tri_color);
+
+}
+
 void obj_mesh_data::set_buffer()
 {
 	// Set the buffer

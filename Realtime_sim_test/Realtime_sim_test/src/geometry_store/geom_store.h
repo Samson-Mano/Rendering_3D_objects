@@ -19,6 +19,9 @@
 #include "geometry_objects/obj_mesh_data.h"
 #include "geometry_objects/label_list_store.h"
 
+// Solver
+#include "../solver/shm_response_solver.h"
+
 
 class geom_store
 {
@@ -49,6 +52,16 @@ public:
 	void paint_geometry();
 private:
 
+	// Declare these globally or in your class
+	std::chrono::high_resolution_clock::time_point lastTime = std::chrono::high_resolution_clock::now();
+	float accumulatedTime = 0.0f;
+	
+	const float timeStep = 0.0001f; // update rate
+	double total_simulation_time = 0.0; // total simualation time
+
+
+	const float displ_scale_factor = 300.0f;
+
 	// Model status
 	label_list_store label_simulation_data;
 	
@@ -67,13 +80,19 @@ private:
 	// Other geometry objects
 	obj_mesh_data boundary_lines;
 
+	// Solver
+	shm_response_solver shm_solver;
+
+
 	void initialize_model(); // Initialize the model
 
+
+	void update_simulation(); // Update the simuation
 	void paint_model(); // Paint the model
 
 
-	double mass_m = 0.0;
-	double stiff_k = 0.0;
+	double mass_m = 1.0;
+	double stiff_k = 100.0;
 	double modal_damp_si = 0.0;
 
 

@@ -33,6 +33,8 @@ public:
 		const double& x_coord,
 		const double& y_coord);
 
+	void update_mesh_color(const glm::vec3& point_color, const glm::vec3& line_color, const glm::vec3& tri_color);
+
 	void set_buffer();
 
 	void clear_mesh();

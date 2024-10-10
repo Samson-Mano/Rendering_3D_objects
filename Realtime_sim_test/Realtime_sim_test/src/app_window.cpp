@@ -33,7 +33,7 @@ void app_window::init()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
 	// Create a window
-	window = glfwCreateWindow(window_width, window_height, "Rendering objects CPP test ", nullptr, nullptr);
+	window = glfwCreateWindow(window_width, window_height, "Spring Mass - Real Time Sim ", nullptr, nullptr);
 
 	if (!window)
 	{

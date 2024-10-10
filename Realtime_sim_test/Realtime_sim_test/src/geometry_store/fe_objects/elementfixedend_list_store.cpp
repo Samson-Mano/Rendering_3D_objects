@@ -14,6 +14,7 @@ elementfixedend_list_store::~elementfixedend_list_store()
 
 void elementfixedend_list_store::init(geom_parameters* geom_param_ptr)
 {
+    // initialize the drawing objects
 	fixed_ends.init(geom_param_ptr,false,false, true);
 
 }
@@ -28,10 +29,10 @@ void elementfixedend_list_store::add_fixed_end(glm::vec2 fixedend_loc, double fi
     double sin_angle = sin(angle_rad);
 
     // Local rectangle corners relative to the top-middle point
-    glm::vec2 top_left(-fixed_end_width / 2.0, fixed_end_height/ 2.0);
-    glm::vec2 top_right(fixed_end_width / 2.0, fixed_end_height/ 2.0);
-    glm::vec2 bottom_left(-fixed_end_width / 2.0, -fixed_end_height/2.0);
-    glm::vec2 bottom_right(fixed_end_width / 2.0, -fixed_end_height/2.0);
+    glm::vec2 top_left(-fixed_end_width, fixed_end_height/ 2.0);
+    glm::vec2 top_right(0.0, fixed_end_height/ 2.0);
+    glm::vec2 bottom_left(-fixed_end_width, -fixed_end_height/2.0);
+    glm::vec2 bottom_right(0.0, -fixed_end_height/2.0);
 
     // Function to apply rotation to a point
     auto rotate_point = [&](const glm::vec2& point) -> glm::vec2 {
@@ -65,12 +66,21 @@ void elementfixedend_list_store::add_fixed_end(glm::vec2 fixedend_loc, double fi
     fixed_ends.add_mesh_tris(1, 2, 3, 0);
 
     fixed_ends.set_buffer();
+
+    // mesh color
+    glm::vec3 point_color = glm::vec3(0.476f, 0.167f, 0.025f); // Not used
+    glm::vec3 line_color = glm::vec3(0.476f, 0.167f, 0.025f); // Not used
+    glm::vec3 tri_color = glm::vec3(0.4, 0.4, 0.4); // (Dark Gray)
+
+    fixed_ends.update_mesh_color(point_color, line_color, tri_color);
+
 }
 
 void elementfixedend_list_store::paint_fixed_end()
 {
 	// Paint the fixed ends
 	fixed_ends.paint_static_mesh();
+
 }
 
 void elementfixedend_list_store::update_opengl_uniforms(bool set_modelmatrix, bool set_viewmatrix, bool set_transparency)

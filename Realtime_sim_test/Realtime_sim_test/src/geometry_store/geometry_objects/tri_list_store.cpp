@@ -100,6 +100,13 @@ void tri_list_store::set_buffer()
 
 }
 
+void tri_list_store::set_tri_color(const glm::vec3& tri_color)
+{
+	// Set the tri color
+	tri_shader.setUniform("vertexColor", tri_color);
+
+}
+
 void tri_list_store::paint_static_triangles()
 {
 	// Paint all the triangles

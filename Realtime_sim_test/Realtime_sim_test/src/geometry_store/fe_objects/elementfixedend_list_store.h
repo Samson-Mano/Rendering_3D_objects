@@ -11,8 +11,8 @@
 class elementfixedend_list_store
 {
 public:
-	const double fixed_end_width = 100.0f;
-	const double fixed_end_height = 400.0f;
+	const double fixed_end_width = 50.0f;
+	const double fixed_end_height = 300.0f;
 
 	elementfixedend_list_store();
 	~elementfixedend_list_store();

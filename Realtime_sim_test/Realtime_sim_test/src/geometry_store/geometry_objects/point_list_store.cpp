@@ -112,6 +112,15 @@ void point_list_store::set_buffer()
 
 }
 
+
+void point_list_store::set_point_color(const glm::vec3& point_color)
+{
+	// Set the point color
+	point_shader.setUniform("vertexColor", point_color);
+
+}
+
+
 void point_list_store::paint_static_points()
 {
 	// Paint all the static points

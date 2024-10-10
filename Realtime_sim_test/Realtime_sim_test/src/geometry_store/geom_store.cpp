@@ -62,19 +62,6 @@ void geom_store::initialize_model()
 	boundary_lines.add_mesh_lines(3, 3, 0);
 
 
-	// Create the Fixed end of spring mass system
-	model_fixedends.init(&geom_param);
-
-	model_fixedends.add_fixed_end(glm::vec2(0.0, -800.0), 90.0);
-
-
-
-
-
-	is_geometry_set = true;
-
-
-
 	// Set the boundary of the geometry
 	std::pair<glm::vec3, glm::vec3> result = geom_parameters::findMinMaxXY(bndry_pts_list);
 	this->geom_param.min_b = result.first;
@@ -84,9 +71,32 @@ void geom_store::initialize_model()
 	// Set the center of the geometry
 	this->geom_param.center = geom_parameters::findGeometricCenter(bndry_pts_list);
 
+
+	// Initialize the model elements
+	model_fixedends.init(&geom_param);
+	model_spring.init(&geom_param);
+	model_mass.init(&geom_param);
+
 	// Set the geometry
 	update_model_matrix();
 	update_model_zoomfit();
+
+
+	// Create the Fixed end of spring mass system
+	model_fixedends.add_fixed_end(glm::vec2(0.0, -800.0), 90.0);
+
+	// Create the spring
+	model_spring.add_spring(0, glm::vec2(0.0, -800.0), glm::vec2(0.0, 200.0));
+
+	// Create the mass
+	model_mass.add_mass(0, glm::vec2(0.0, 200.0));
+
+
+	// Initialize solver parameters with default values
+	shm_solver.init(this->mass_m, this->stiff_k, this->modal_damp_si);
+
+
+	is_geometry_set = true;
 
 
 	// Set the geometry buffers
@@ -144,7 +154,9 @@ void geom_store::update_model_matrix()
 	// Update the model matrix
 	boundary_lines.update_opengl_uniforms(true, false, true);
 	model_fixedends.update_opengl_uniforms(true, false, true);
-	
+	model_spring.update_opengl_uniforms(true, false, true);
+	model_mass.update_opengl_uniforms(true, false, true);
+
 }
 
 void geom_store::update_model_zoomfit()
@@ -161,6 +173,8 @@ void geom_store::update_model_zoomfit()
 	// Update the zoom scale and pan translation
 	boundary_lines.update_opengl_uniforms(false, true, false);
 	model_fixedends.update_opengl_uniforms(false, true, false);
+	model_spring.update_opengl_uniforms(false, true, false);
+	model_mass.update_opengl_uniforms(false, true, false);
 
 }
 
@@ -178,7 +192,9 @@ void geom_store::update_model_pan(glm::vec2& transl)
 	// Update the pan translation
 	boundary_lines.update_opengl_uniforms(false, true, false);
 	model_fixedends.update_opengl_uniforms(false, true, false);
-	
+	model_spring.update_opengl_uniforms(false, true, false);
+	model_mass.update_opengl_uniforms(false, true, false);
+
 }
 
 
@@ -193,6 +209,8 @@ void geom_store::update_model_zoom(double& z_scale)
 	// Update the Zoom
 	boundary_lines.update_opengl_uniforms(false, true, false);
 	model_fixedends.update_opengl_uniforms(false, true, false);
+	model_spring.update_opengl_uniforms(false, true, false);
+	model_mass.update_opengl_uniforms(false, true, false);
 
 }
 
@@ -215,6 +233,8 @@ void geom_store::update_model_transperency(bool is_transparent)
 	// Update the model transparency
 	boundary_lines.update_opengl_uniforms(false, false, true);
 	model_fixedends.update_opengl_uniforms(false, false, true);
+	model_spring.update_opengl_uniforms(false, false, true);
+	model_mass.update_opengl_uniforms(false, false, true);
 
 }
 
@@ -232,6 +252,13 @@ void geom_store::paint_geometry()
 			this->stiff_k = sim_window->stiffness_k;
 			this->modal_damp_si = sim_window->damping_ratio_si;
 
+			// reset the solver and timer
+			this->accumulatedTime = 0.0f;
+			this->total_simulation_time = 0.0;
+
+			this->shm_solver.init(this->mass_m, this->stiff_k, this->modal_damp_si);
+
+
 			sim_window->execute_update_model = false;
 		}
 
@@ -244,9 +271,43 @@ void geom_store::paint_geometry()
 	// Clean the back buffer and assign the new color to it
 	glClear(GL_COLOR_BUFFER_BIT);
 
+	// Update the simulation
+	update_simulation();
+
 	// Paint the model
 	paint_model();
 
+}
+
+void geom_store::update_simulation()
+{
+	// Get the current time
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<float> deltaTime = currentTime - lastTime;
+	lastTime = currentTime;
+
+	// Accumulate the time
+	accumulatedTime += deltaTime.count();
+
+	// Update simulation at a fixed time step (e.g., 100 Hz)
+	while (accumulatedTime >= timeStep) 
+	{
+		// Accumulate the total simulation time across all frames
+		this->total_simulation_time += timeStep;
+
+		// Call the solver
+		shm_solver.solve_at_time_t(this->total_simulation_time, timeStep);
+
+		// Get the displacement from the solver
+		double displ_at_t = shm_solver.displ_at_t;
+
+		// Update the geometry
+		model_mass.update_mass_displacement(0, glm::vec2(0.0, 200.0 + (displ_scale_factor * displ_at_t)));
+
+		model_spring.update_spring_displacement(0, glm::vec2(0.0, -800.0), glm::vec2(0.0, 200.0 + (displ_scale_factor * displ_at_t)));
+
+		accumulatedTime -= timeStep;
+	}
 }
 
 
@@ -254,9 +315,18 @@ void geom_store::paint_model()
 {
 
 	// Paint the boundaries
+	glLineWidth(1.1f);
+
 	boundary_lines.paint_static_mesh();
 
+	//_______________________________________________
+	glLineWidth(2.1f);
+
+	model_spring.paint_spring();
+
 	model_fixedends.paint_fixed_end();
+
+	model_mass.paint_pointmass();
 
 	////______________________________________________
 	//// Paint the model

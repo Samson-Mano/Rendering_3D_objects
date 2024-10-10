@@ -35,6 +35,8 @@ public:
 	void update_point(const int& point_id, const double& x_coord, const double& y_coord);
 
 	void set_buffer();
+	void set_point_color(const glm::vec3& point_color);
+
 	void paint_static_points();
 	void paint_dynamic_points();
 
