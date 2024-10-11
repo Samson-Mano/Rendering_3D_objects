@@ -60,9 +60,6 @@
     <ClCompile Include="src\geometry_store\geometry_buffers\VertexBufferLayout.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\geometry_store\geometry_objects\label_list_store.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\geometry_store\geometry_objects\line_list_store.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -126,6 +123,9 @@
     <ClCompile Include="src\solver\shm_response_solver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\geometry_store\geometry_objects\text_list_store.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\dlls\freetype.dll" />
@@ -133,6 +133,8 @@
     <None Include="resources\dlls\glfw3.dll" />
     <None Include="resources\shaders\default_frag_shader.frag" />
     <None Include="resources\shaders\default_vert_shader.vert" />
+    <None Include="resources\shaders\text_vert_shader.vert" />
+    <None Include="resources\shaders\text_frag_shader.frag" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="resources\fonts\CanadaDBNormal.ttf" />
@@ -186,9 +188,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\geometry_store\geometry_buffers\VertexBufferLayout.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\geometry_store\geometry_objects\label_list_store.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\geometry_store\geometry_objects\line_list_store.h">
@@ -264,6 +263,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\solver\shm_response_solver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\geometry_store\geometry_objects\text_list_store.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

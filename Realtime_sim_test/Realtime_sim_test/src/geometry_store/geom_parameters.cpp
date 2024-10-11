@@ -52,6 +52,7 @@ void geom_parameters::init()
 	geom_colors.inlcond_displ_color = glm::vec3(0.54f, 0.06f, 0.31f); 
 	geom_colors.inlcond_velo_color = glm::vec3(0.2, 0.7, 0.2); // Green
 
+	geom_colors.text_color = glm::vec3(0.1, 0.1, 0.8); // (Dark Blue)
 
 	// Example projection matrix (parallel projection)
 	float left = -1.0f;    // Left clipping plane

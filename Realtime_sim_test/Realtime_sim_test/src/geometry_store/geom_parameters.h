@@ -26,6 +26,8 @@ struct geom_color_theme
 	glm::vec3 ptmass_color = glm::vec3(0);
 	glm::vec3 inlcond_displ_color = glm::vec3(0);
 	glm::vec3 inlcond_velo_color = glm::vec3(0);
+
+	glm::vec3 text_color = glm::vec3(0);
 };
 
 struct chart_setting_data

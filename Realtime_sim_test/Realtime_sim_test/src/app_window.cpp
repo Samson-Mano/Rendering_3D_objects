@@ -168,6 +168,10 @@ void app_window::app_render()
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
+		// Calculate the fps
+		calculateFPS();
+		geom.app_fps = this->fps;
+
 		// menu events
 		menu_events();
 
@@ -259,6 +263,9 @@ void app_window::framebufferSizeCallback(GLFWwindow* window, int window_width, i
 	// Set the viewport to the maximum dimension and center it at (0, 0)
 	glViewport(-x_offset, -y_offset, max_dim, max_dim);
 
+
+	
+
 	app_window::isWindowSizeChanging = true;
 }
 
@@ -273,4 +280,23 @@ void app_window::GLFWwindow_set_icon(GLFWwindow* window)
 	icon.height = stb.image_height;
 	icon.pixels = stb.image;
 	glfwSetWindowIcon(window, 1, &icon);
+}
+
+
+
+void app_window::calculateFPS()
+{
+	double current_time = glfwGetTime();
+	double delta_time = current_time - previous_time;
+	frame_count++;
+
+	// Update every second
+	if (delta_time >= 1.0)
+	{
+		this->fps = (double)frame_count / delta_time;
+
+		// Reset for the next second
+		previous_time = current_time;
+		frame_count = 0;
+	}
 }

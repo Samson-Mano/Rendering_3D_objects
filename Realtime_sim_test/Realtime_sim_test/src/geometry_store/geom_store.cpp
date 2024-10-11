@@ -16,12 +16,6 @@ void geom_store::init(options_window* op_window, simulate_window* sim_window)
 	// Initialize the geometry parameters
 	geom_param.init();
 
-	// Label 
-	label_simulation_data.init(&geom_param);
-
-	// Set the basic matrices
-	label_simulation_data.update_opengl_uniforms(true, false, false, false, false,false);
-
 	
 	is_geometry_set = false;
 
@@ -77,6 +71,13 @@ void geom_store::initialize_model()
 	model_spring.init(&geom_param);
 	model_mass.init(&geom_param);
 
+	// Label 
+	label1_simulheader.init(&geom_param);
+	label1_simulvalue.init(&geom_param);
+
+	label2_framerateheader.init(&geom_param);
+	label2_frameratevalue.init(&geom_param);
+
 	// Set the geometry
 	update_model_matrix();
 	update_model_zoomfit();
@@ -90,6 +91,38 @@ void geom_store::initialize_model()
 
 	// Create the mass
 	model_mass.add_mass(0, glm::vec2(0.0, 200.0));
+
+	// Set the simulation data
+	std::string label_data = "Simulation time = ";
+	glm::vec2 label_loc = glm::vec2(0, 0);
+
+	label1_simulheader.add_text(label_data, label_loc);
+	label1_simulheader.set_buffer();
+	label1_simulheader.update_opengl_uniforms(true, false, false);
+
+
+	label_data = "XXXXXXXXXXX";
+	label_loc = glm::vec2(220, 0);
+
+	label1_simulvalue.add_text(label_data, label_loc);
+	label1_simulvalue.set_buffer();
+	label1_simulvalue.update_opengl_uniforms(true, false, false);
+
+
+	label_data = "Frame rate = ";
+	label_loc = glm::vec2(0, 50);
+
+	label2_framerateheader.add_text(label_data, label_loc);
+	label2_framerateheader.set_buffer();
+	label2_framerateheader.update_opengl_uniforms(true, false, false);
+
+
+	label_data = "XXXXXXXXXXX";
+	label_loc = glm::vec2(162, 50);
+
+	label2_frameratevalue.add_text(label_data, label_loc);
+	label2_frameratevalue.set_buffer();
+	label2_frameratevalue.update_opengl_uniforms(true, false, false);
 
 
 	// Initialize solver parameters with default values
@@ -150,6 +183,16 @@ void geom_store::update_model_matrix()
 	glm::mat4 g_transl = glm::translate(glm::mat4(1.0f), geom_translation);
 
 	geom_param.modelMatrix = g_transl * glm::scale(glm::mat4(1.0f), glm::vec3(static_cast<float>(geom_param.geom_scale)));
+
+	// Update the screen point origin
+	glm::vec2 screen_topleft = glm::vec2(-1.0f * 0.6f * normalized_screen_width, 
+		0.5f  * normalized_screen_height);
+	
+	label1_simulheader.set_screen_topleft(screen_topleft);
+	label1_simulvalue.set_screen_topleft(screen_topleft);
+	label2_framerateheader.set_screen_topleft(screen_topleft);
+	label2_frameratevalue.set_screen_topleft(screen_topleft);
+
 
 	// Update the model matrix
 	boundary_lines.update_opengl_uniforms(true, false, true);
@@ -277,6 +320,9 @@ void geom_store::paint_geometry()
 	// Paint the model
 	paint_model();
 
+	// Paint the simulation status
+	paint_simulation_status();
+
 }
 
 void geom_store::update_simulation()
@@ -328,39 +374,42 @@ void geom_store::paint_model()
 
 	model_mass.paint_pointmass();
 
-	////______________________________________________
-	//// Paint the model
-	//if (op_window->is_show_modelelements == true)
-	//{
-	//	// Show the model elements
-	//	mesh_data.paint_triangles();
-	//	mesh_data.paint_quadrilaterals();
-
-	//}
-
-	//if (op_window->is_show_modeledeges == true)
-	//{
-	//	// Show the model edges
-	//	mesh_data.paint_mesh_edges();
-	//}
 
 
-	//if (op_window->is_show_inlcondition == true)
-	//{
-	//	// Show the node initial condition
-	//	// Initial Displacement
-	//	glPointSize(geom_param.selected_point_size);
-	//	glLineWidth(geom_param.selected_line_width);
 
-	//	//node_inldispl.paint_inlcond();
-
-	//	//// Initial Velocity
-	//	//node_inlvelo.paint_inlcond();
+}
 
 
-	//	glPointSize(geom_param.point_size);
-	//	glLineWidth(geom_param.line_width);
-	//}
+void geom_store::paint_simulation_status()
+{
+	// Paint the labels
+
+	label1_simulheader.paint_static_texts();
+
+	label2_framerateheader.paint_static_texts();
+
+
+	// Update dynamically
+	// Create an output string stream
+	std::ostringstream totalsimultime_stream;
+	totalsimultime_stream << std::fixed << std::setprecision(4) << total_simulation_time;
+
+	std::string label_data = totalsimultime_stream.str();
+	glm::vec2 label_loc = glm::vec2(220, 0); // 162, 50
+
+	label1_simulvalue.update_text(label_data, label_loc);
+	label1_simulvalue.paint_dynamic_texts();
+
+	//__________________________________________________________________________________________
+
+	std::ostringstream framerate_stream;
+	framerate_stream << std::fixed << std::setprecision(4) << this->app_fps;
+
+	label_data = framerate_stream.str();
+	label_loc = glm::vec2(162, 50); 
+
+	label2_frameratevalue.update_text(label_data, label_loc);
+	label2_frameratevalue.paint_dynamic_texts();
 
 
 }

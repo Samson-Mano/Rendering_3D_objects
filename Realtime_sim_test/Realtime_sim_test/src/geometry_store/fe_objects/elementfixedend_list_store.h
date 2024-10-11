@@ -4,7 +4,6 @@
 #include <unordered_map>
 #include "../geom_parameters.h"
 #include "../geometry_buffers/gBuffers.h"
-#include "../geometry_objects/label_list_store.h"
 #include "../geometry_objects/obj_mesh_data.h"
 
 

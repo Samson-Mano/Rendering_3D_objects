@@ -17,7 +17,7 @@
 
 // Geometry Objects
 #include "geometry_objects/obj_mesh_data.h"
-#include "geometry_objects/label_list_store.h"
+#include "geometry_objects/text_list_store.h"
 
 // Solver
 #include "../solver/shm_response_solver.h"
@@ -28,6 +28,8 @@ class geom_store
 public: 
 	const double m_pi = 3.14159265358979323846;
 	bool is_geometry_set = false;
+
+	double app_fps = 0.0;
 
 	// Main Variable to strore the geometry parameters
 	geom_parameters geom_param;
@@ -63,7 +65,11 @@ private:
 	const float displ_scale_factor = 300.0f;
 
 	// Model status
-	label_list_store label_simulation_data;
+	text_list_store label1_simulheader;
+	text_list_store label1_simulvalue;
+
+	text_list_store label2_framerateheader;
+	text_list_store label2_frameratevalue;
 	
 	// Mesh objects
 	elementfixedend_list_store model_fixedends;
@@ -90,6 +96,7 @@ private:
 	void update_simulation(); // Update the simuation
 	void paint_model(); // Paint the model
 
+	void paint_simulation_status(); // Paint the simulation status
 
 	double mass_m = 1.0;
 	double stiff_k = 100.0;

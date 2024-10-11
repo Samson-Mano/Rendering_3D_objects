@@ -52,7 +52,14 @@ public:
 	void fini();
 	void app_render();
 	void menu_events();
+
+private:
+	double previous_time = 0.0;
+	int frame_count = 0;
+	double fps = 0.0;
+
 	static void framebufferSizeCallback(GLFWwindow* window, int window_width, int window_height);
 	void GLFWwindow_set_icon(GLFWwindow* window);
-private:
+	void calculateFPS();
+
 };
