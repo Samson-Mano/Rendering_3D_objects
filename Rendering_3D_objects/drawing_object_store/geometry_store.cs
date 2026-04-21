@@ -11,16 +11,13 @@ using OpenTK.Input;
 // This app class structure
 using Rendering_3D_objects.global_variables;
 using Rendering_3D_objects.drawing_object_store.drawing_objects;
-using Rendering_3D_objects.drawing_object_store.drawing_objects.object_store;
 
 namespace Rendering_3D_objects.drawing_object_store
 {
     public class geometry_store
     {
-        public nodes_store nodes { get; private set; }
-        public line_elements elines { get; private set; }
-        public tri_elements etris { get; private set; }
-        public quad_elements equads { get; private set; }
+        public mesh_store mesh_data { get; private set; }
+
         public bool is_geometry_set { get; private set; }
 
         public Vector3 geom_bounds_max { get; private set; }
@@ -29,21 +26,18 @@ namespace Rendering_3D_objects.drawing_object_store
         public geometry_store()
         {
             // Empty constructor
-            nodes = new nodes_store();
-            elines = new line_elements(false);
-            etris = new tri_elements();
-            equads = new quad_elements();
+            mesh_data = new mesh_store();
 
             this.is_geometry_set = false;
         }
 
-        public geometry_store(nodes_store nodes, line_elements elines, tri_elements etris, quad_elements equads)
+        public geometry_store(List<point_store> points,
+             List<line_store> elines,
+             List<triangle_store> etris,
+             List<quad_store> equads)
         {
             // Main constructor
-            this.nodes = nodes;
-            this.elines = elines;
-            this.etris = etris;
-            this.equads = equads;
+            mesh_data = new mesh_store(points, elines, etris, equads);
 
             // Set the boundary size for the geometry
             set_geometry_bounds();
@@ -59,24 +53,26 @@ namespace Rendering_3D_objects.drawing_object_store
             double min_z = double.MaxValue, max_z = double.MinValue;     
 
             // Loop through all nodal co-ordinates to find the geometry bounds
-            foreach(var pt in this.nodes.all_nodes)
+            foreach(var pt in this.mesh_data.points)
             {
                 // X Bound
-                min_x = pt.Value.d_x < min_x ? pt.Value.d_x: min_x;
-                max_x = pt.Value.d_x > max_x ? pt.Value.d_x: max_x;
-
+                min_x = pt.x_coord < min_x ? pt.x_coord: min_x;
+                max_x = pt.x_coord > max_x ? pt.x_coord: max_x;
+                
                 // Y Bound
-                min_y = pt.Value.d_y < min_y ? pt.Value.d_y : min_y;
-                max_y = pt.Value.d_y > max_y ? pt.Value.d_y : max_y;
+                min_y = pt.y_coord < min_y ? pt.y_coord : min_y;
+                max_y = pt.y_coord > max_y ? pt.y_coord : max_y;
 
                 // Z Bound
-                min_z = pt.Value.d_z < min_z ? pt.Value.d_z : min_z;
-                max_z = pt.Value.d_z > max_z ? pt.Value.d_z : max_z;
+                min_z = pt.z_coord < min_z ? pt.z_coord : min_z;
+                max_z = pt.z_coord > max_z ? pt.z_coord : max_z;
             }
 
             geom_bounds_max = new Vector3((float)max_x , (float)max_y, (float)max_z);
             geom_bounds_min = new Vector3((float)min_x, (float) min_y, (float)min_z);
         }
+
+
 
         public void set_openTK_objects()
         {

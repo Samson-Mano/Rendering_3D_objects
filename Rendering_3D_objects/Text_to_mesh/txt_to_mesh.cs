@@ -5,17 +5,17 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
 
-using Rendering_3D_objects.drawing_object_store;
 using Rendering_3D_objects.drawing_object_store.drawing_objects;
+
 
 namespace Rendering_3D_objects.Text_to_mesh
 {
     public class txt_to_mesh
     {
-        public nodes_store nodes { get; private set; }
-        public line_elements elines { get; private set; }
-        public tri_elements etris { get; private set; }
-        public quad_elements equads { get; private set; }
+        public List<point_store> points { get; private set; }
+        public List<line_store> elines { get; private set; }
+        public List<triangle_store> etris { get; private set; }
+        public List<quad_store>  equads { get; private set; }
 
         public bool is_read_valid { get; private set; }
 
@@ -24,10 +24,10 @@ namespace Rendering_3D_objects.Text_to_mesh
             // Convert string to mesh
 
             // Initialize the output variables
-            nodes = new nodes_store();
-            elines = new line_elements(false);
-            etris = new tri_elements();
-            equads = new quad_elements();
+            points = new List<point_store>();
+            elines = new List<line_store>();
+            etris = new List<triangle_store>();
+            equads = new List<quad_store>();
 
             foreach (string line in inpt_txt.Split('\r', '\n'))
             {
@@ -44,8 +44,10 @@ namespace Rendering_3D_objects.Text_to_mesh
                         double z = double.Parse(values[4]);
 
                         // Do something with the parsed values here
-                        Color pt_color = Color.Red;
-                        nodes.add_point(n_id, x, y, z, pt_color);
+                        points.Add(new point_store { pt_id = n_id, 
+                            x_coord = (float)x, 
+                            y_coord = (float)y, 
+                            z_coord = (float)z });
                     }
 
                     // Element
@@ -57,36 +59,45 @@ namespace Rendering_3D_objects.Text_to_mesh
                         if (values[2] == "line")
                         {
                             int l_id = int.Parse(values[1]);
-                            int nd1 = int.Parse(values[3]);
-                            int nd2 = int.Parse(values[4]);
+                            int spt_id = int.Parse(values[3]);
+                            int ept_id = int.Parse(values[4]);
 
                             // Add to lines
-                            elines.add_line(l_id, nd1, nd2, nodes);
+                            elines.Add(new line_store { line_id = l_id, 
+                                startpt_id = spt_id, 
+                                endpt_id = ept_id });
                         }
 
                         // tri element
                         if (values[2] == "tri")
                         {
-                            int l_id = int.Parse(values[1]);
+                            int t_id = int.Parse(values[1]);
                             int nd1 = int.Parse(values[3]);
                             int nd2 = int.Parse(values[4]);
                             int nd3 = int.Parse(values[5]);
 
                             // Add to lines
-                            etris.add_triangle(l_id, nd1, nd2, nd3, nodes);
+                            etris.Add(new triangle_store { triangle_id = t_id, 
+                                pt1_id = nd1, 
+                                pt2_id = nd2, 
+                                pt3_id = nd3 });
                         }
 
                         // Quad element
                         if (values[2] == "quad")
                         {
-                            int l_id = int.Parse(values[1]);
+                            int q_id = int.Parse(values[1]);
                             int nd1 = int.Parse(values[3]);
                             int nd2 = int.Parse(values[4]);
                             int nd3 = int.Parse(values[5]);
                             int nd4 = int.Parse(values[6]);
 
                             // Add to lines
-                            equads.add_quadrilateral(l_id, nd1, nd2, nd3, nd4, nodes);
+                            equads.Add(new quad_store { quad_id = q_id, 
+                                pt1_id = nd1, 
+                                pt2_id = nd2, 
+                                pt3_id = nd3, 
+                                pt4_id = nd4 });
                         }
                     }
 
@@ -95,7 +106,7 @@ namespace Rendering_3D_objects.Text_to_mesh
 
             // reading complete, check whether data is added
             is_read_valid = false;
-            if(nodes.all_nodes.Count>0)
+            if(points.Count > 0 && (elines.Count > 0 || etris.Count > 0 || equads.Count > 0))
             {
                 is_read_valid = true;
             }

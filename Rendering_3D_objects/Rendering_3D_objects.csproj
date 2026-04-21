@@ -81,10 +81,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="drawing_object_store\drawing_objects\line_elements.cs" />
+    <Compile Include="drawing_object_store\drawing_objects\mesh_store.cs" />
     <Compile Include="drawing_object_store\drawing_objects\nodes_store.cs" />
-    <Compile Include="drawing_object_store\drawing_objects\object_store\line_store.cs" />
-    <Compile Include="drawing_object_store\drawing_objects\object_store\point_store.cs" />
-    <Compile Include="drawing_object_store\drawing_objects\object_store\triangle_store.cs" />
     <Compile Include="drawing_object_store\drawing_objects\quad_elements.cs" />
     <Compile Include="drawing_object_store\drawing_objects\tri_elements.cs" />
     <Compile Include="drawing_object_store\geometry_store.cs" />

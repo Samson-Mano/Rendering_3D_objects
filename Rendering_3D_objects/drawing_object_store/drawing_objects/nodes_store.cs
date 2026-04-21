@@ -11,7 +11,6 @@ using OpenTK.Graphics.OpenGL4;
 using OpenTK.Input;
 // This app class structure
 using Rendering_3D_objects.open_tk_control.open_tk_buffer;
-using Rendering_3D_objects.drawing_object_store.drawing_objects.object_store;
 
 namespace Rendering_3D_objects.drawing_object_store.drawing_objects
 {
