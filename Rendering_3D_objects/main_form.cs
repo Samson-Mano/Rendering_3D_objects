@@ -75,7 +75,7 @@ namespace Rendering_3D_objects
                     if (txt.is_read_valid == true)
                     {
                         // Read successful add to mesh data
-                        geom = new geometry_store(txt.nodes, txt.elines, txt.etris, txt.equads);
+                        geom = new geometry_store(txt.points, txt.elines, txt.etris, txt.equads);
                         geom.set_openTK_objects();
 
                         // Update the geometry shader
@@ -306,7 +306,7 @@ namespace Rendering_3D_objects
             if (gvariables_static.Is_cntrldown == true && e.Button == MouseButtons.Left)
             {
                 // Set the Rotation center
-                g_control.rotate_set_center(new PointF(e.X, e.Y), geom.nodes);
+                g_control.rotate_set_center(new PointF(e.X, e.Y), geom.mesh_data.points);
             }
         }
 

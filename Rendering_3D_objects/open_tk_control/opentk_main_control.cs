@@ -10,7 +10,6 @@ using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Input;
 // This app class structure
-using Rendering_3D_objects.drawing_object_store.drawing_objects.object_store;
 using Rendering_3D_objects.global_variables;
 using Rendering_3D_objects.open_tk_control;
 using Rendering_3D_objects.open_tk_control.open_tk_bgdraw;
@@ -343,7 +342,7 @@ namespace Rendering_3D_objects.open_tk_control
             this.surf_geom_shader.SetMatrix4("panTranslation", current_transformation);
         }
 
-        public void rotate_set_center(PointF mousePt, drawing_object_store.drawing_objects.nodes_store nodes)
+        public void rotate_set_center(PointF mousePt, List<drawing_object_store.drawing_objects.point_store> points)
         {
             // Conver the screen point to openTK window point
             float maxDimension = Math.Max(this.panel_width, this.panel_height);
@@ -355,10 +354,10 @@ namespace Rendering_3D_objects.open_tk_control
             Vector2 screen_pt = new Vector2((2.0f * screen_shift.X) / maxDimension, (2.0f * screen_shift.Y) / maxDimension);
 
             // Check all the nodes whether the screen point clicked or not
-            foreach (var nd in nodes.all_nodes)
+            foreach (var pt in points)
             {
                 // Get the node point as vector3
-                Vector3 nd_pt = nd.Value.get_point_as_vector();
+                Vector3 nd_pt = new Vector3(pt.x_coord, pt.y_coord, pt.z_coord);
 
                 if (is_point_hit(nd_pt, screen_pt) == true)
                 {

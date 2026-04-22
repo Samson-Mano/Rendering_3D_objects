@@ -80,10 +80,12 @@ namespace Rendering_3D_objects.drawing_object_store
                 return;
 
             // Set the openTK objects
-            this.nodes.set_openTK_objects();
-            this.elines.set_openTK_objects();
-            this.etris.set_openTK_objects();
-            this.equads.set_openTK_objects();
+            mesh_data.set_openTK_objects();
+
+            //this.nodes.set_openTK_objects();
+            //this.elines.set_openTK_objects();
+            //this.etris.set_openTK_objects();
+            //this.equads.set_openTK_objects();
         }
 
         public void paint_line_objects()
