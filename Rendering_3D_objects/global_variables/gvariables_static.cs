@@ -1,8 +1,9 @@
-﻿using System;
+﻿using OpenTK;
+using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
-using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -11,6 +12,14 @@ namespace Rendering_3D_objects.global_variables
     public static class gvariables_static
     {
         public static Color glcontrol_background_color = Color.White;
+
+
+        // Static Variable to control the OpenTK Uniforms
+        public static Matrix4 rotationMatrix;
+        public static Matrix4 modelMatrix;
+        public static Matrix4 panTranslationMatrix;
+        public static float zoomScale = 1.0f;
+
 
         // Garphics Control variables
         public static bool Is_panflg = false;
@@ -28,7 +37,9 @@ namespace Rendering_3D_objects.global_variables
         public static double triangle_shrink_factor = 0.88f;
 
         public static bool is_paint_wiremesh = true;
-        public static bool is_paint_surf = true;
+        public static bool is_paint_meshsurface = true;
+        public static bool is_paint_lines = true;
+        public static bool is_paint_points = true;
 
 
         public static Color[] standard_colors = new[] { Color.Blue, Color.BlueViolet,

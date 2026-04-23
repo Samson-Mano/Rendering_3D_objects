@@ -42,6 +42,8 @@ namespace Rendering_3D_objects.drawing_object_store
             // Set the boundary size for the geometry
             set_geometry_bounds();
 
+            mesh_data.set_openTK_objects();
+
             this.is_geometry_set = true;
         }
 
@@ -50,15 +52,15 @@ namespace Rendering_3D_objects.drawing_object_store
             // Set the X,Y,Z bounds of geometry
             double min_x = double.MaxValue, max_x = double.MinValue;
             double min_y = double.MaxValue, max_y = double.MinValue;
-            double min_z = double.MaxValue, max_z = double.MinValue;     
+            double min_z = double.MaxValue, max_z = double.MinValue;
 
             // Loop through all nodal co-ordinates to find the geometry bounds
-            foreach(var pt in this.mesh_data.points)
+            foreach (var pt in this.mesh_data.points)
             {
                 // X Bound
-                min_x = pt.x_coord < min_x ? pt.x_coord: min_x;
-                max_x = pt.x_coord > max_x ? pt.x_coord: max_x;
-                
+                min_x = pt.x_coord < min_x ? pt.x_coord : min_x;
+                max_x = pt.x_coord > max_x ? pt.x_coord : max_x;
+
                 // Y Bound
                 min_y = pt.y_coord < min_y ? pt.y_coord : min_y;
                 max_y = pt.y_coord > max_y ? pt.y_coord : max_y;
@@ -68,58 +70,31 @@ namespace Rendering_3D_objects.drawing_object_store
                 max_z = pt.z_coord > max_z ? pt.z_coord : max_z;
             }
 
-            geom_bounds_max = new Vector3((float)max_x , (float)max_y, (float)max_z);
-            geom_bounds_min = new Vector3((float)min_x, (float) min_y, (float)min_z);
+            geom_bounds_max = new Vector3((float)max_x, (float)max_y, (float)max_z);
+            geom_bounds_min = new Vector3((float)min_x, (float)min_y, (float)min_z);
         }
 
 
+        public void paint_mesh()
+        {
 
-        public void set_openTK_objects()
+            if (is_geometry_set == false)
+                return;
+
+            // Paint the mesh objects
+            mesh_data.paint_mesh();
+
+        }
+
+
+        public void update_ShaderUniforms()
         {
             if (is_geometry_set == false)
                 return;
 
-            // Set the openTK objects
-            mesh_data.set_openTK_objects();
-
-            //this.nodes.set_openTK_objects();
-            //this.elines.set_openTK_objects();
-            //this.etris.set_openTK_objects();
-            //this.equads.set_openTK_objects();
+            // Update the mesh shader uniforms
+            mesh_data.update_ShaderUniforms();
         }
-
-        public void paint_line_objects()
-        {
-            // Paint the lines objects
-            if (is_geometry_set == false)
-                return;
-
-            GL.LineWidth(5.0f);
-            this.elines.paint_all_lines();
-            this.nodes.paint_all_points();
-
-            // Paint the boundary of the mesh
-            if(gvariables_static.is_paint_wiremesh == true)
-            {
-                GL.LineWidth(0.1f);
-                this.equads.paint_all_quadrilaterals_boundary();
-                this.etris.paint_all_triangles_boundary();
-            }
-        }
-
-
-        public void paint_surf_objects()
-        {
-            if (is_geometry_set == false || gvariables_static.is_paint_surf == false)
-                return;
-
-            // Paint all the objects
-            this.equads.paint_all_quadrilaterals();
-            this.etris.paint_all_triangles();
-
-        }
-
-
 
     }
 }

@@ -1,10 +1,22 @@
-﻿using OpenTK;
+﻿
+// OpenTK library
+using OpenTK;
+using OpenTK.Graphics;
+using OpenTK.Graphics.OpenGL4;
+using OpenTK.Input;
+using Rendering_3D_objects.global_variables;
 using Rendering_3D_objects.open_tk_control.open_tk_buffer;
+// This app class structure
+using Rendering_3D_objects.open_tk_control.open_tk_shader;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
+
+
 
 namespace Rendering_3D_objects.drawing_object_store.drawing_objects
 {
@@ -45,16 +57,17 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
     {
         public List<point_store> points { get; private set; }
         public List<line_store> elines { get; private set; }
-
         public List<line_store> wireframe { get; private set; }
-
         public List<triangle_store> etris { get; private set; }
         public List<quad_store> equads { get; private set; }
 
 
+        // Shader
+        Shader mesh_shader;
+
+
         // OpenTK variables
         VertexBuffer point_VertexBufferObject;
-        // List<VertexBufferLayout> point_BufferLayout;
         VertexArray point_VertexArrayObject;
 
         // Index  buffer for the points, lines and triangles
@@ -69,6 +82,7 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
         Dictionary<int, int> pointIdToIndex = new Dictionary<int, int>();
         List<float> vertexData = new List<float>();
         List<float> vertexnormalData = new List<float>();
+        List<uint> pointIndexData = new List<uint>();
         List<uint> lineIndexData = new List<uint>();
         List<uint> wireframeIndexData = new List<uint>();
         List<uint> triangleIndexData = new List<uint>();
@@ -81,6 +95,12 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
             elines = new List<line_store>();
             etris = new List<triangle_store>();
             equads = new List<quad_store>();
+
+            // Create the mesh shader
+            mesh_shader = new Shader(shader_store.mesh_vert_shader(),
+                 shader_store.mesh_frag_shader());
+
+
         }
 
         public mesh_store(List<point_store> points,
@@ -94,12 +114,17 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
             this.etris = etris;
             this.equads = equads;
 
+            // Create the mesh shader
+            mesh_shader = new Shader(shader_store.mesh_vert_shader(),
+                 shader_store.mesh_frag_shader());
+
             // Create the wireframe from the mesh data
             create_wireframe();
 
             //_________________________________________________________________________
             // Create the pointIdToIndex mapping for OpenTK geometry data
             pointIdToIndex = new Dictionary<int, int>();
+            pointIndexData = new List<uint>(points.Count);
 
             // Store normals for each point
             List<Vector3> vnormals = new List<Vector3>(points.Count);
@@ -110,6 +135,8 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
 
                 // Initialize normals to zero
                 vnormals.Add(Vector3.Zero);
+
+                pointIndexData.Add((uint)i);
             }
 
             //_________________________________________________________________________
@@ -290,13 +317,133 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
         }
 
 
+        public void paint_mesh()
+        {
+
+            mesh_shader.Use();
+
+            // Paint the mesh using OpenTK (triangles and quads)
+            if (gvariables_static.is_paint_meshsurface == true)
+            {
+                GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+
+                mesh_shader.SetVector4("vertexColor", new Vector4(0.6f, 0.6f, 0.8f, 0.6f)); // Light blue color (Transparent)
+
+
+                // Paint the triangle mesh
+                triangle_ElementBufferObject.Bind();
+                GL.DrawElements(PrimitiveType.Triangles, triangleIndexData.Count, DrawElementsType.UnsignedInt, 0);
+
+                // Paint the quad mesh (as triangles)
+                quad_ElementBufferObject.Bind();
+                GL.DrawElements(PrimitiveType.Triangles, quadIndexData.Count, DrawElementsType.UnsignedInt, 0);
+            }
+
+            // Paint the wireframe
+            if (gvariables_static.is_paint_wiremesh == true)
+            {
+                GL.LineWidth(1.0f);
+
+                mesh_shader.SetVector4("vertexColor", new Vector4(0.0f, 0.0f, 0.0f, 1.0f)); // black
+
+                // Paint the wireframe lines
+                wireframe_ElementBufferObject.Bind();
+                GL.DrawElements(PrimitiveType.Lines, wireframeIndexData.Count, DrawElementsType.UnsignedInt, 0);
+
+            }
+
+            // Paint the line mesh
+            if (gvariables_static.is_paint_lines == true)
+            {
+                GL.LineWidth(2.5f);
+
+                mesh_shader.SetVector4("vertexColor", new Vector4(1f, 0f, 0f, 1f)); // red
+
+                line_ElementBufferObject.Bind();
+                GL.DrawElements(PrimitiveType.Lines, lineIndexData.Count, DrawElementsType.UnsignedInt, 0);
+            }
+
+
+            // Paint the points
+            if (gvariables_static.is_paint_points == true)
+            {
+                GL.PointSize(4.0f);
+
+                mesh_shader.SetVector4("vertexColor", new Vector4(0f, 1f, 0f, 1f)); // green
+
+                point_ElementBufferObject.Bind();
+                GL.DrawElements(PrimitiveType.Points, pointIndexData.Count, DrawElementsType.UnsignedInt, 0);
+            }
+            //
+        }
+
+
         public void set_openTK_objects()
         {
 
+            // Create the point vertices
+            float[] pointVertices = new float[6 * points.Count];
+
+            for (int i = 0; i < points.Count; i++)
+            {
+                int vi = i * 3;
+                int vo = i * 6;
+
+                // X, Y, Z Co-ordinate
+                pointVertices[vo + 0] = vertexData[vi + 0];
+                pointVertices[vo + 1] = vertexData[vi + 1];
+                pointVertices[vo + 2] = vertexData[vi + 2];
+
+                // Add the triangle normal
+                pointVertices[vo + 3] = vertexnormalData[vi + 0];
+                pointVertices[vo + 4] = vertexnormalData[vi + 1];
+                pointVertices[vo + 5] = vertexnormalData[vi + 2];
+                //
+            }
 
 
+            //1.  Create the vertex buffer (VBO) for the points
+            this.point_VertexBufferObject = new VertexBuffer(pointVertices, pointVertices.Length * sizeof(float));
+
+
+            //2. Create and add to the buffer layout
+            List<VertexBufferLayout> point_BufferLayout = new List<VertexBufferLayout>();
+            point_BufferLayout.Add(new VertexBufferLayout(3, 6)); // Vertex layout
+            point_BufferLayout.Add(new VertexBufferLayout(3, 6)); // Normal layout
+
+            //3. Create the vertex Array VAO (Add vertexBuffer binds both the vertexbuffer and vertexarray)
+            point_VertexArrayObject = new VertexArray();
+            point_VertexArrayObject.Add_vertexBuffer(this.point_VertexBufferObject, point_BufferLayout);
+
+            // 4. Create the index buffer object (IBO) for the points 
+            // 4A. Create the point index data 
+            point_ElementBufferObject = new IndexBuffer(pointIndexData.ToArray(), pointIndexData.Count);
+
+            // 4B. Create the line index data 
+            line_ElementBufferObject = new IndexBuffer(lineIndexData.ToArray(), lineIndexData.Count);
+
+            // 4C. Create the wireframe index data
+            wireframe_ElementBufferObject = new IndexBuffer(wireframeIndexData.ToArray(), wireframeIndexData.Count);
+
+            // 4D. Create the triangle index data
+            triangle_ElementBufferObject = new IndexBuffer(triangleIndexData.ToArray(), triangleIndexData.Count);
+
+            // 4E. Create the quad index data (2 Triangles per quad)
+            quad_ElementBufferObject = new IndexBuffer(quadIndexData.ToArray(), quadIndexData.Count);
 
         }
+
+
+        public void update_ShaderUniforms()
+        {
+            // Update the shader uniforms for the mesh shader
+            mesh_shader.SetMatrix4("modelMatrix", gvariables_static.modelMatrix);
+            mesh_shader.SetMatrix4("rotationMatrix", gvariables_static.rotationMatrix);
+            mesh_shader.SetMatrix4("panTranslation", gvariables_static.panTranslationMatrix);
+            mesh_shader.SetFloat("zoomscale", gvariables_static.zoomScale);
+
+        }
+
 
 
     }

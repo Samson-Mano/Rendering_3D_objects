@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace Rendering_3D_objects.open_tk_control.open_tk_shader
 {
-    public class shader_store
+    public static class shader_store
     {
         // Store all the shader as string
         #region "Vertex shaders"
-        public string br_vert_shader()
+        public static string br_vert_shader()
         {
             // Stores the Background vertex shader
             return "#version 330 core\r\n" +
@@ -31,7 +31,7 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
                     "}\r\n";
         }
 
-        public string line_vert_shader()
+        public static string line_vert_shader()
         {
             // Stores the Geometry line vertex shader
             return "#version 330 core\r\n" +
@@ -64,7 +64,7 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
                     "}\r\n";
         }
 
-        public string surface_vert_shader()
+        public static string mesh_vert_shader()
         {
             // Stores the Geometry surface vertex shader
             return "#version 330 core\r\n" +
@@ -73,10 +73,10 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
                     "uniform mat4 rotationMatrix;\r\n" +
                     "uniform mat4 panTranslation;\r\n" +
                     "uniform float zoomscale;\r\n" +
+                    "uniform vec4 vertexColor;\r\n" +
                     "\r\n" +
                     "layout(location = 0) in vec3 position;\r\n" +
-                    "layout(location = 1) in vec4 vertexColor;\r\n" +
-                    "layout(location = 2) in vec3 surfnormal;\r\n" +
+                    "layout(location = 1) in vec3 surfnormal;\r\n" +
                     "\r\n" +
                     "\r\n" +
                     "out vec3 s_normal;\r\n" +
@@ -112,7 +112,7 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
                     "} \r\n";
         }
 
-        public string txt_vert_shader()
+        public static string txt_vert_shader()
         {
             // Stores the Text vertex shader
             return "";
@@ -120,7 +120,7 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
         #endregion
 
         #region "Fragment shaders"
-        public string br_frag_shader()
+        public static string br_frag_shader()
         {
             // Stores the Background fragment shader
             return "#version 330 core\r\n" +
@@ -134,7 +134,7 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
                     "}";
         }
 
-        public string line_frag_shader()
+        public static string line_frag_shader()
         {
             // Stores the Geometry line fragment shader
             return "#version 330 core\r\n" +
@@ -148,7 +148,7 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
                     "}";
         }
 
-        public string surface_frag_shader()
+        public static string mesh_frag_shader()
         {
             // Stores the Geometry surface fragment shader
             return "#version 330 core\r\n" +
@@ -188,19 +188,15 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
                       "}"; 
         }
 
-        public string txt_frag_shader()
+        public  static string txt_frag_shader()
         {
             // Stores the Text fragment shader
             return "";
         }
         #endregion
 
-        public shader_store()
-        {
-            // Empty constructor
-        }
 
-        public string get_vertex_shader(string s_type)
+        public static string get_vertex_shader(string s_type)
         {
             // Returns the vector shader
             if (s_type == "background")
@@ -211,9 +207,9 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
             {
                 return line_vert_shader();
             }
-            else if (s_type == "surfacegeometry")
+            else if (s_type == "meshgeometry")
             {
-                return surface_vert_shader();
+                return mesh_vert_shader();
             }
             else if (s_type == "text")
             {
@@ -223,7 +219,7 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
             return null;
         }
 
-        public string get_fragment_shader(string s_type)
+        public static string get_fragment_shader(string s_type)
         {
             // Returns the fragment shader
             if (s_type == "background")
@@ -234,9 +230,9 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
             {
                 return line_frag_shader();
             }
-            else if (s_type == "surfacegeometry")
+            else if (s_type == "meshgeometry")
             {
-                return surface_frag_shader();
+                return mesh_frag_shader();
             }
             else if (s_type == "text")
             {

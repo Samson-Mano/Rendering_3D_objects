@@ -76,13 +76,13 @@ namespace Rendering_3D_objects
                     {
                         // Read successful add to mesh data
                         geom = new geometry_store(txt.points, txt.elines, txt.etris, txt.equads);
-                        geom.set_openTK_objects();
 
                         // Update the geometry shader
                         g_control.update_geom_shader(geom.geom_bounds_max, geom.geom_bounds_min);
 
                         // Refresh the painting area
-                        glControl_main_panel.Refresh();
+                        geom.update_ShaderUniforms();   
+                        glControl_main_panel.Invalidate();
                     }
                 }
                 catch (Exception ex)
@@ -170,8 +170,10 @@ namespace Rendering_3D_objects
             toolStripStatusLabel_Zoom.Text = "Zoom: " + (gvariables_static.RoundOff((int)(1.0f * 100))).ToString() + "%";
 
             // Refresh the painting area
-            glControl_main_panel.Refresh();
+            geom.update_ShaderUniforms();
+            glControl_main_panel.Invalidate();
         }
+
 
         private void glControl_main_panel_Paint(object sender, PaintEventArgs e)
         {
@@ -184,21 +186,28 @@ namespace Rendering_3D_objects
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(0, BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
 
-            // Paint the background color
-            g_control.set_opengl_shader("background");
-            g_control.paint_opengl_control_background();
+            //// Paint the background color
+            //g_control.set_opengl_shader("background");
+            //g_control.paint_opengl_control_background();
+
+            // OPen GL works as state machine (select buffer & select the shader)
+            // Vertex Buffer (Buffer memory in GPU VRAM)
+            // Shader (program which runs on GPU to paint in the screen)
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+            // Paint the geometry
+            geom.paint_mesh();
 
 
+            //g_control.set_opengl_shader("surfacegeometry");
+            //geom.paint_surf_objects();
 
-            g_control.set_opengl_shader("surfacegeometry");
-            geom.paint_surf_objects();
+            //// Display the model using OpenGL
 
-            // Display the model using OpenGL
-            
-            GL.LineWidth(2.73f);
-            g_control.set_opengl_shader("linegeometry");
-            // geom.set_openTK_objects();
-            geom.paint_line_objects();
+            //GL.LineWidth(2.73f);
+            //g_control.set_opengl_shader("linegeometry");
+            //// geom.set_openTK_objects();
+            //geom.paint_line_objects();
 
             //// Display the label
             //g_control.set_opengl_shader(1);
@@ -223,9 +232,12 @@ namespace Rendering_3D_objects
                 g_control.intelli_zoom_operation(e.Delta, new PointF(e.X, e.Y));
 
                 // Update the zoom value in tool strip status bar
-                toolStripStatusLabel_Zoom.Text = "Zoom: " + (gvariables_static.RoundOff((int)(100f * g_control.zoom_scale))).ToString() + "%";
+                toolStripStatusLabel_Zoom.Text = "Zoom: " + (gvariables_static.RoundOff((int)(100f * gvariables_static.zoomScale))).ToString() + "%";
+                
+                
                 // Refresh the painting area
-                glControl_main_panel.Refresh();
+                geom.update_ShaderUniforms();
+                glControl_main_panel.Invalidate();
             }
         }
 
@@ -243,7 +255,8 @@ namespace Rendering_3D_objects
                     // Set the variable to indicate pan operation begins
                     gvariables_static.Is_panflg = true;
 
-                    glControl_main_panel.Refresh();
+                    geom.update_ShaderUniforms();
+                    glControl_main_panel.Invalidate();
                 }
                 else if (e.Button == MouseButtons.Left)
                 {
@@ -255,7 +268,8 @@ namespace Rendering_3D_objects
                     // Set the variable to indicate pan operation begins
                     gvariables_static.Is_rotateflg = true;
 
-                    glControl_main_panel.Refresh();
+                    geom.update_ShaderUniforms();
+                    glControl_main_panel.Invalidate();
                 }
             }
         }
@@ -289,7 +303,8 @@ namespace Rendering_3D_objects
                 g_control.pan_operation(new PointF(e.X - click_pt.X, e.Y - click_pt.Y));
 
                 // Refresh the painting area
-                glControl_main_panel.Refresh();
+                geom.update_ShaderUniforms();
+                glControl_main_panel.Invalidate();
             }
             else if (gvariables_static.Is_rotateflg == true)
             {
@@ -297,7 +312,8 @@ namespace Rendering_3D_objects
                 g_control.rotate_operation(new PointF(e.X, e.Y));
 
                 // Refresh the painting area
-                glControl_main_panel.Refresh();
+                geom.update_ShaderUniforms();
+                glControl_main_panel.Invalidate();
             }
         }
 
@@ -321,7 +337,8 @@ namespace Rendering_3D_objects
                 g_control.pan_operation_complete();
 
                 // Refresh the painting area
-                glControl_main_panel.Refresh();
+                geom.update_ShaderUniforms();
+                glControl_main_panel.Invalidate();
             }
             else if (gvariables_static.Is_rotateflg == true)
             {
@@ -330,7 +347,8 @@ namespace Rendering_3D_objects
                 // Rotate operation ends
 
                 //Refresh the painting area
-                glControl_main_panel.Refresh();
+                geom.update_ShaderUniforms();
+                glControl_main_panel.Invalidate();
             }
         }
 
@@ -352,7 +370,7 @@ namespace Rendering_3D_objects
                     toolStripStatusLabel_Zoom.Text = "Zoom: " + (gvariables_static.RoundOff((int)(1.0f * 100))).ToString() + "%";
                     toolStripStatusLabel_Zoom.Invalidate();
 
-                    glControl_main_panel.Refresh();
+                    geom.update_ShaderUniforms();
                     glControl_main_panel.Invalidate();
                 }
             }

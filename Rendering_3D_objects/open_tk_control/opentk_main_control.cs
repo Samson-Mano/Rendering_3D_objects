@@ -39,22 +39,22 @@ namespace Rendering_3D_objects.open_tk_control
         private Vector3 previous_translation;
         private Vector3 current_translation;
         // Zoom Scale Transformation
-        public float zoom_scale { get; private set; }
+        private float zoom_scale;
 
-        // Shader store string
-        private shader_store shader_str = new shader_store();
+        //// Shader store string
+        //private shader_store shader_str = new shader_store();
 
-        // Shader variable
-        // background shader
-        private Shader bgrd_shader;
-        // line geometry shader
-        private Shader line_geom_shader;
-        // surface geometry shader
-        private Shader surf_geom_shader;
-        // Text shader
-        private Shader text_shader;
+        //// Shader variable
+        //// background shader
+        //private Shader bgrd_shader;
+        //// line geometry shader
+        //private Shader line_geom_shader;
+        //// surface geometry shader
+        //private Shader surf_geom_shader;
+        //// Text shader
+        //private Shader text_shader;
 
-        draw_axis_store d_axis = new draw_axis_store();
+        // draw_axis_store d_axis = new draw_axis_store();
 
         public opentk_main_control()
         {
@@ -85,51 +85,51 @@ namespace Rendering_3D_objects.open_tk_control
             this.previous_translation = Vector3.Zero;
             this.current_translation = Vector3.Zero;
 
-            // create the shaders
-            this.bgrd_shader = new Shader(shader_str.get_vertex_shader("background"),
-                 shader_str.get_fragment_shader("background"));
-            this.line_geom_shader = new Shader(shader_str.get_vertex_shader("linegeometry"),
-                 shader_str.get_fragment_shader("linegeometry"));
-            this.surf_geom_shader = new Shader(shader_str.get_vertex_shader("surfacegeometry"),
-                 shader_str.get_fragment_shader("surfacegeometry"));
-            //this.text_shader = new Shader(shader_str.get_vertex_shader("text"),
-            //     shader_str.get_fragment_shader("text"));
+            //// create the shaders
+            //this.bgrd_shader = new Shader(shader_str.get_vertex_shader("background"),
+            //     shader_str.get_fragment_shader("background"));
+            //this.line_geom_shader = new Shader(shader_str.get_vertex_shader("linegeometry"),
+            //     shader_str.get_fragment_shader("linegeometry"));
+            //this.surf_geom_shader = new Shader(shader_str.get_vertex_shader("surfacegeometry"),
+            //     shader_str.get_fragment_shader("surfacegeometry"));
+            // this.text_shader = new Shader(shader_str.get_vertex_shader("text"),
+            //      shader_str.get_fragment_shader("text"));
 
-            d_axis.set_openTK_objects();
+            // d_axis.set_openTK_objects();
         }
 
         public void set_opengl_shader(string s_type)
         {
-            // Bind the shader
-            if (s_type == "background")
-            {
-                this.bgrd_shader.Use();
-            }
-            else if (s_type == "linegeometry")
-            {
-                this.line_geom_shader.Use();
-            }
-            else if (s_type == "surfacegeometry")
-            {
-                this.surf_geom_shader.Use();
-            }
-            else if (s_type == "text")
-            {
+            //// Bind the shader
+            //if (s_type == "background")
+            //{
+            //    this.bgrd_shader.Use();
+            //}
+            //else if (s_type == "linegeometry")
+            //{
+            //    this.line_geom_shader.Use();
+            //}
+            //else if (s_type == "surfacegeometry")
+            //{
+            //    this.surf_geom_shader.Use();
+            //}
+            //else if (s_type == "text")
+            //{
 
-            }
+            //}
         }
 
 
-        public void paint_opengl_control_background()
-        {
+        //public void paint_opengl_control_background()
+        //{
 
-            // OPen GL works as state machine (select buffer & select the shader)
-            // Vertex Buffer (Buffer memory in GPU VRAM)
-            // Shader (program which runs on GPU to paint in the screen)
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+        //    // OPen GL works as state machine (select buffer & select the shader)
+        //    // Vertex Buffer (Buffer memory in GPU VRAM)
+        //    // Shader (program which runs on GPU to paint in the screen)
+        //    GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            d_axis.paint_axis();
-        }
+        //    // d_axis.paint_axis();
+        //}
 
         public void update_drawing_area_size(int width, int height)
         {
@@ -140,15 +140,21 @@ namespace Rendering_3D_objects.open_tk_control
             // SRT Transformation (Scale, Rotate, Translate)
             // Zoom Scale
             this.zoom_scale = 1.0f;
-            this.line_geom_shader.SetFloat("zoomscale", this.zoom_scale);
-            this.surf_geom_shader.SetFloat("zoomscale", this.zoom_scale);
+
+            gvariables_static.zoomScale = this.zoom_scale;
+
+            //this.line_geom_shader.SetFloat("zoomscale", this.zoom_scale);
+            //this.surf_geom_shader.SetFloat("zoomscale", this.zoom_scale);
 
             // update the drawing area size
             arcball_rotate = new arcball_transformation();
             this.total_rotation = arcball_rotate.GetRotationMatrix();
-            this.bgrd_shader.SetMatrix4("rotationMatrix", this.total_rotation);
-            this.line_geom_shader.SetMatrix4("rotationMatrix", this.total_rotation);
-            this.surf_geom_shader.SetMatrix4("rotationMatrix", this.total_rotation);
+
+            gvariables_static.rotationMatrix = this.total_rotation;
+
+            //this.bgrd_shader.SetMatrix4("rotationMatrix", this.total_rotation);
+            //this.line_geom_shader.SetMatrix4("rotationMatrix", this.total_rotation);
+            //this.surf_geom_shader.SetMatrix4("rotationMatrix", this.total_rotation);
 
             // Zero translation
             this.previous_translation = Vector3.Zero;
@@ -174,7 +180,7 @@ namespace Rendering_3D_objects.open_tk_control
                 bgrd_modelMatrix.Transpose();
 
                 // Set the back ground model matrix
-                this.bgrd_shader.SetMatrix4("modelMatrix", bgrd_modelMatrix);
+                // this.bgrd_shader.SetMatrix4("modelMatrix", bgrd_modelMatrix);
 
                 GL.Viewport(0, (int)(-(width - height) * 0.5), width, width);
             }
@@ -194,7 +200,7 @@ namespace Rendering_3D_objects.open_tk_control
                 bgrd_modelMatrix.Transpose();
 
                 // Set the back ground model matrix
-                this.bgrd_shader.SetMatrix4("modelMatrix", bgrd_modelMatrix);
+                // this.bgrd_shader.SetMatrix4("modelMatrix", bgrd_modelMatrix);
 
                 GL.Viewport((int)(-(height - width) * 0.5), 0, height, height);
             }
@@ -225,13 +231,18 @@ namespace Rendering_3D_objects.open_tk_control
             // Store the model matrix
             this.geom_model_matrix = modelMatrix;
 
-            this.line_geom_shader.SetMatrix4("modelMatrix", modelMatrix);
-            this.surf_geom_shader.SetMatrix4("modelMatrix", modelMatrix);
+            gvariables_static.modelMatrix = this.geom_model_matrix;
+
+            //this.line_geom_shader.SetMatrix4("modelMatrix", modelMatrix);
+            //this.surf_geom_shader.SetMatrix4("modelMatrix", modelMatrix);
 
             // Zoom Scale
             this.zoom_scale = 1.0f;
-            this.line_geom_shader.SetFloat("zoomscale", this.zoom_scale);
-            this.surf_geom_shader.SetFloat("zoomscale", this.zoom_scale);
+
+            gvariables_static.zoomScale = this.zoom_scale;
+
+            //this.line_geom_shader.SetFloat("zoomscale", this.zoom_scale);
+            //this.surf_geom_shader.SetFloat("zoomscale", this.zoom_scale);
 
             // Set the rotation center
             this.rotation_center = new Vector3((geom_bound_max.X + geom_bound_min.X) * 0.5f * this.geom_scale,
@@ -256,8 +267,10 @@ namespace Rendering_3D_objects.open_tk_control
 
             Matrix4 p_transl = Matrix4.CreateTranslation(Vector3.Zero);
 
-            this.line_geom_shader.SetMatrix4("panTranslation", p_transl);
-            this.surf_geom_shader.SetMatrix4("panTranslation", p_transl);
+            gvariables_static.panTranslationMatrix = p_transl;
+
+            //this.line_geom_shader.SetMatrix4("panTranslation", p_transl);
+            //this.surf_geom_shader.SetMatrix4("panTranslation", p_transl);
         }
 
         public void intelli_zoom_operation(double e_Delta, PointF mousePt)
@@ -288,8 +301,11 @@ namespace Rendering_3D_objects.open_tk_control
             float ty = (-1.0f) * this.zoom_scale * 0.5f * (screen_pt_b4_scale.Y - screen_pt_a4_scale.Y);
 
             //update the zoom scale
-            this.line_geom_shader.SetFloat("zoomscale", this.zoom_scale);
-            this.surf_geom_shader.SetFloat("zoomscale", this.zoom_scale);
+            gvariables_static.zoomScale = this.zoom_scale;
+
+
+            //this.line_geom_shader.SetFloat("zoomscale", this.zoom_scale);
+            //this.surf_geom_shader.SetFloat("zoomscale", this.zoom_scale);
 
             translate_Transform(tx, ty);
             pan_operation_complete();
@@ -338,8 +354,11 @@ namespace Rendering_3D_objects.open_tk_control
             Matrix4 current_transformation = Matrix4.CreateTranslation(this.current_translation);
 
             // Update the shader translation
-            this.line_geom_shader.SetMatrix4("panTranslation", current_transformation);
-            this.surf_geom_shader.SetMatrix4("panTranslation", current_transformation);
+            gvariables_static.panTranslationMatrix = current_transformation;    
+
+
+            //this.line_geom_shader.SetMatrix4("panTranslation", current_transformation);
+            //this.surf_geom_shader.SetMatrix4("panTranslation", current_transformation);
         }
 
         public void rotate_set_center(PointF mousePt, List<drawing_object_store.drawing_objects.point_store> points)
@@ -374,8 +393,10 @@ namespace Rendering_3D_objects.open_tk_control
                     // Store the model matrix
                     this.geom_model_matrix = modelMatrix;
 
-                    this.line_geom_shader.SetMatrix4("modelMatrix", modelMatrix);
-                    this.surf_geom_shader.SetMatrix4("modelMatrix", modelMatrix);
+                    gvariables_static.modelMatrix = this.geom_model_matrix;
+
+                    //this.line_geom_shader.SetMatrix4("modelMatrix", modelMatrix);
+                    //this.surf_geom_shader.SetMatrix4("modelMatrix", modelMatrix);
 
                     // Set the rotation center
                     Vector3 previous_rotation_center = this.rotation_center;
@@ -399,9 +420,12 @@ namespace Rendering_3D_objects.open_tk_control
             // Rotate the vertex shader
             arcball_rotate.OnMouseDown(return_screen_point(mousePt));
             this.total_rotation = arcball_rotate.GetRotationMatrix();
-            this.bgrd_shader.SetMatrix4("rotationMatrix", this.total_rotation);
-            this.line_geom_shader.SetMatrix4("rotationMatrix", this.total_rotation);
-            this.surf_geom_shader.SetMatrix4("rotationMatrix", this.total_rotation);
+
+            gvariables_static.rotationMatrix = this.total_rotation;
+
+            //this.bgrd_shader.SetMatrix4("rotationMatrix", this.total_rotation);
+            //this.line_geom_shader.SetMatrix4("rotationMatrix", this.total_rotation);
+            //this.surf_geom_shader.SetMatrix4("rotationMatrix", this.total_rotation);
         }
 
         public void rotate_operation(PointF mousePt)
@@ -409,9 +433,12 @@ namespace Rendering_3D_objects.open_tk_control
             // Rotate the vertex shader
             arcball_rotate.OnMouseMove(return_screen_point(mousePt));
             this.total_rotation = arcball_rotate.GetRotationMatrix();
-            this.bgrd_shader.SetMatrix4("rotationMatrix", this.total_rotation);
-            this.line_geom_shader.SetMatrix4("rotationMatrix", this.total_rotation);
-            this.surf_geom_shader.SetMatrix4("rotationMatrix", this.total_rotation);
+
+            gvariables_static.rotationMatrix = this.total_rotation;
+
+            //this.bgrd_shader.SetMatrix4("rotationMatrix", this.total_rotation);
+            //this.line_geom_shader.SetMatrix4("rotationMatrix", this.total_rotation);
+            //this.surf_geom_shader.SetMatrix4("rotationMatrix", this.total_rotation);
         }
 
         private bool is_point_hit(Vector3 node_coord, Vector2 screen_pt)
