@@ -241,30 +241,30 @@ namespace Rendering_3D_objects.open_tk_control
             return Matrix4.CreateFromQuaternion(rotation);
         }
 
-        private Vector3 MapToSphere(PointF mousePt, Vector3 rotationPt)
-        {
-            // Translate the mouse point to the center of the arcball
-            PointF centerPt = new PointF(0.5f, 0.5f);
-            Vector3 mouseVec = new Vector3(mousePt.X - centerPt.X, centerPt.Y - mousePt.Y, 0.0f);
+        //private Vector3 MapToSphere(PointF mousePt, Vector3 rotationPt)
+        //{
+        //    // Translate the mouse point to the center of the arcball
+        //    PointF centerPt = new PointF(0.5f, 0.5f);
+        //    Vector3 mouseVec = new Vector3(mousePt.X - centerPt.X, centerPt.Y - mousePt.Y, 0.0f);
 
-            // Compute the radius of the arcball
-            float radius = 0.5f;
+        //    // Compute the radius of the arcball
+        //    float radius = 0.5f;
 
-            // Compute the distance from the mouse point to the center of the arcball
-            float dist = mouseVec.Length;
+        //    // Compute the distance from the mouse point to the center of the arcball
+        //    float dist = mouseVec.Length;
 
-            // If the mouse point is outside the arcball, project it onto the surface of the arcball
-            if (dist > radius)
-            {
-                mouseVec = Vector3.Normalize(mouseVec);
-                return rotationPt + mouseVec * radius;
-            }
+        //    // If the mouse point is outside the arcball, project it onto the surface of the arcball
+        //    if (dist > radius)
+        //    {
+        //        mouseVec = Vector3.Normalize(mouseVec);
+        //        return rotationPt + mouseVec * radius;
+        //    }
 
-            // Compute the z-coordinate of the point on the arcball using the Pythagorean theorem
-            float z = (float)Math.Sqrt(radius * radius - dist * dist);
+        //    // Compute the z-coordinate of the point on the arcball using the Pythagorean theorem
+        //    float z = (float)Math.Sqrt(radius * radius - dist * dist);
 
-            return rotationPt + new Vector3(mouseVec.X, mouseVec.Y, z);
-        }
+        //    return rotationPt + new Vector3(mouseVec.X, mouseVec.Y, z);
+        //}
 
 
 

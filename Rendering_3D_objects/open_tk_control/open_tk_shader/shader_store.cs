@@ -64,7 +64,35 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
                     "}\r\n";
         }
 
+
+
         public static string mesh_vert_shader()
+        {
+            return "#version 330 core\r\n" +
+                    "\r\n" +
+                    "// Pre-computed MVP matrix on CPU for better performance\r\n" +
+                    "uniform mat4 uMVP;           // Model-View-Projection matrix\r\n" +
+                    "uniform mat4 uNormalMatrix;  // For normal transformation\r\n" +
+                    "uniform vec4 vertexColor;\r\n" +
+                    "\r\n" +
+                    "layout(location = 0) in vec3 aPosition;\r\n" +
+                    "layout(location = 1) in vec3 aNormal;\r\n" +
+                    "\r\n" +
+                    "out vec3 vNormal;\r\n" +
+                    "out vec4 vColor;\r\n" +
+                    "\r\n" +
+                    "void main()\r\n" +
+                    "{\r\n" +
+                    "    gl_Position = uMVP * vec4(aPosition, 1.0);\r\n" +
+                    "    vNormal = normalize(mat3(uNormalMatrix) * aNormal);\r\n" +
+                    "    vColor = vertexColor;\r\n" +
+                    "}\r\n";
+        }
+
+
+
+
+        public static string mesh_vert_shader_superseeded()
         {
             // Stores the Geometry surface vertex shader
             return "#version 330 core\r\n" +
@@ -148,20 +176,20 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
                     "}";
         }
 
-        public static string mesh_frag_shader()
+        public static string mesh_frag_shader_superseeded()
         {
             // Stores the Geometry surface fragment shader
             return "#version 330 core\r\n" +
                     "\r\n" +
-                    "in vec3 s_normal;\r\n" +
-                    "in vec4 v_Color;\r\n" +
+                    "in vec3 vNormal;\r\n" +
+                    "in vec4 vColor;\r\n" +
                     "out vec4 f_Color; // fragment's final color (out to the fragment shader)\r\n" +
                     "\r\n" +
                     "void main()\r\n" +
                     "{\r\n" +
                         "vec3 viewDirection = {0.0,0.0,50.0}; \r\n" +
                         "// Normalize the interpolated normal \r\n" +
-                        "vec3 normal = normalize(s_normal); \r\n" +
+                        "vec3 normal = normalize(vNormal); \r\n" +
                         "\r\n" +
                         "// Use the constant view direction \r\n" +
                         "vec3 viewDir = {0.0,0.0,1.0}; // normalize(viewDirection); \r\n" +
@@ -180,13 +208,71 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
                         "float specular = pow(max(dot(reflection, viewDir), 0.0), 32.0); \r\n" +
                         "\r\n" +
                         "// Combine the diffuse and specular components with the vertex color and light color \r\n" +
-                        "vec4 diffuseColor = v_Color * diffuse; \r\n" +
+                        "vec4 diffuseColor = vColor * diffuse; \r\n" +
                         "vec4 specularColor = lightColor * specular; \r\n" +
                         "\r\n" +
                         "// Set the fragment color as the sum of the diffuse and specular components \r\n" +
-                        "f_Color = v_Color; // diffuseColor + specularColor; \r\n" +
+                        "f_Color = vColor; // diffuseColor + specularColor; \r\n" +
                       "}"; 
         }
+
+
+        //public static string mesh_frag_shader()
+        //{
+        //    return "#version 330 core\r\n" +
+        //            "\r\n" +
+        //            "in vec3 vNormal;\r\n" +
+        //            "in vec4 vColor;\r\n" +
+        //            "out vec4 f_Color;\r\n" +
+        //            "\r\n" +
+        //            "uniform vec3 uLightDir;\r\n" +
+        //            "uniform float uAmbientStrength;\r\n" +
+        //            "uniform bool uDoubleSided;\r\n" +
+        //            "\r\n" +
+        //            "void main()\r\n" +
+        //            "{\r\n" +
+        //            "    vec3 normal = normalize(vNormal);\r\n" +
+        //            "    vec3 lightDir = normalize(uLightDir);\r\n" +
+        //            "    \r\n" +
+        //            "    // Calculate dot product, using absolute value for double-sided\r\n" +
+        //            "    float diff = dot(normal, lightDir);\r\n" +
+        //            "    if (uDoubleSided) {\r\n" +
+        //            "        diff = abs(diff);  // Light both sides equally\r\n" +
+        //            "    }\r\n" +
+        //            "    diff = max(diff, 0.0);\r\n" +
+        //            "    \r\n" +
+        //            "    float ambient = uAmbientStrength;\r\n" +
+        //            "    float brightness = ambient + diff;\r\n" +
+        //            "    \r\n" +
+        //            "    f_Color = vec4(vColor.rgb * brightness, vColor.a);\r\n" +
+        //            "}\r\n";
+        //}
+
+
+        public static string mesh_frag_shader()
+        {
+            return "#version 330 core\r\n" +
+                    "\r\n" +
+                    "in vec3 vNormal;\r\n" +
+                    "in vec4 vColor;\r\n" +
+                    "out vec4 f_Color;\r\n" +
+                    "\r\n" +
+                    "uniform float uAmbientStrength;\r\n" +
+                    "\r\n" +
+                    "void main()\r\n" +
+                    "{\r\n" +
+                    "    vec3 normal = normalize(vNormal);\r\n" +
+                    "    vec3 lightDir = normalize(vec3(0.5, 1.0, 0.3)); // Fixed light direction\r\n" +
+                    "    \r\n" +
+                    "    float diff = max(dot(normal, lightDir), 0.0);\r\n" +
+                    "    float ambient = uAmbientStrength;\r\n" +
+                    "    float brightness = ambient + diff;\r\n" +
+                    "    \r\n" +
+                    "    f_Color = vec4(vColor.rgb * brightness, vColor.a);\r\n" +
+                    "}\r\n";
+        }
+
+
 
         public  static string txt_frag_shader()
         {

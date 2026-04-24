@@ -437,12 +437,41 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
         public void update_ShaderUniforms()
         {
             // Update the shader uniforms for the mesh shader
-            mesh_shader.SetMatrix4("modelMatrix", gvariables_static.modelMatrix);
-            mesh_shader.SetMatrix4("rotationMatrix", gvariables_static.rotationMatrix);
-            mesh_shader.SetMatrix4("panTranslation", gvariables_static.panTranslationMatrix);
-            mesh_shader.SetFloat("zoomscale", gvariables_static.zoomScale);
+            //mesh_shader.SetMatrix4("modelMatrix", gvariables_static.modelMatrix);
+            //mesh_shader.SetMatrix4("rotationMatrix", gvariables_static.rotationMatrix);
+            //mesh_shader.SetMatrix4("panTranslation", gvariables_static.panTranslationMatrix);
+            //mesh_shader.SetFloat("zoomscale", gvariables_static.zoomScale);
+
+            Matrix4 scalingMatrix = Matrix4.CreateScale((float)gvariables_static.zoomScale, 
+                (float)gvariables_static.zoomScale, 
+                (float)gvariables_static.zoomScale);
+            
+            Matrix4 viewMatrix = Matrix4.Transpose(gvariables_static.panTranslationMatrix) * scalingMatrix;
+
+
+            Matrix4 mvp =gvariables_static.ProjectionMatrix() *
+               viewMatrix *
+               gvariables_static.rotationMatrix * 
+               gvariables_static.modelMatrix;
+
+            Matrix4 normalMatrix = Matrix4.Transpose(Matrix4.Invert(gvariables_static.rotationMatrix * 
+                gvariables_static.modelMatrix));
+
+            // Set uniforms
+            mesh_shader.SetMatrix4("uMVP", mvp);
+            mesh_shader.SetMatrix4("uNormalMatrix", normalMatrix);
+
+            // Fragement shader uniforms
+           //  mesh_shader.SetVector3("uLightDir", new Vector3(0.5f, 1.0f, 0.8f)); // Diagonal light
+            mesh_shader.SetFloat("uAmbientStrength", 0.3f);
+           // mesh_shader.SetBool("uDoubleSided", true);
 
         }
+
+
+
+
+
 
 
 

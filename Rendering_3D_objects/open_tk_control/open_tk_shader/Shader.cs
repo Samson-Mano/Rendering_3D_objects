@@ -167,6 +167,13 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
             GL.Uniform1(_uniformLocations[name], data);
         }
 
+
+        public void SetBool(string name, bool data)
+        {
+            GL.UseProgram(Handle);
+            GL.Uniform1(_uniformLocations[name], data ? 1 : 0);
+        }
+
         /// <summary>
         /// Set a uniform Matrix4 on this shader
         /// </summary>

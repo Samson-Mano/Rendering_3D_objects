@@ -419,6 +419,9 @@ namespace Rendering_3D_objects.open_tk_control
         {
             // Rotate the vertex shader
             arcball_rotate.OnMouseDown(return_screen_point(mousePt));
+
+            // arcball_rotate.StartDrag(new Vector2(mousePt.X, mousePt.Y), new Size(panel_width, panel_height));
+
             this.total_rotation = arcball_rotate.GetRotationMatrix();
 
             gvariables_static.rotationMatrix = this.total_rotation;
@@ -432,6 +435,9 @@ namespace Rendering_3D_objects.open_tk_control
         {
             // Rotate the vertex shader
             arcball_rotate.OnMouseMove(return_screen_point(mousePt));
+
+            // arcball_rotate.UpdateDrag(new Vector2(mousePt.X, mousePt.Y), new Size(panel_width, panel_height));
+
             this.total_rotation = arcball_rotate.GetRotationMatrix();
 
             gvariables_static.rotationMatrix = this.total_rotation;

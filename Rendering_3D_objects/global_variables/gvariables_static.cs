@@ -42,6 +42,33 @@ namespace Rendering_3D_objects.global_variables
         public static bool is_paint_points = true;
 
 
+        //// Set the default projection matrix
+        //// Define the orthographic projection parameters
+        //float left = -1.0f;
+        //float right = 1.0f;
+        //float bottom = -1.0f;
+        //float top = 1.0f;
+        //float nearPlane = 100.0f;
+        //float farPlane = -100.0f;
+
+        //// Create the orthographic projection matrix
+        //Matrix4 projectionMatrix = Matrix4.CreateOrthographicOffCenter(left, right, bottom, top, nearPlane, farPlane);
+
+        public static Matrix4 ProjectionMatrix()
+        {
+            // Define the orthographic projection parameters
+            float left = -1.0f;
+            float right = 1.0f;
+            float bottom = -1.0f;
+            float top = 1.0f;
+            float nearPlane = 100.0f;
+            float farPlane = -100.0f;
+
+            // Create the orthographic projection matrix
+            return Matrix4.CreateOrthographicOffCenter(left, right, bottom, top, nearPlane, farPlane);
+        }
+
+
         public static Color[] standard_colors = new[] { Color.Blue, Color.BlueViolet,
             Color.Brown, Color.BurlyWood,Color.CadetBlue, Color.Chocolate,Color.Coral, Color.CornflowerBlue,
             Color.Crimson, Color.DarkBlue,Color.DarkCyan, Color.DarkGoldenrod,Color.DarkGreen, Color.DarkKhaki,
