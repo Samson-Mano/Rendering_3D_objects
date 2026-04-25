@@ -39,7 +39,7 @@ namespace Rendering_3D_objects.global_variables
         public static bool is_paint_wiremesh = true;
         public static bool is_paint_meshsurface = true;
         public static bool is_paint_lines = true;
-        public static bool is_paint_points = true;
+        public static bool is_paint_points = false;
 
 
         //// Set the default projection matrix

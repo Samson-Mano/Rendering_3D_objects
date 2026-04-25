@@ -75,15 +75,24 @@ namespace Rendering_3D_objects.drawing_object_store
         }
 
 
-        public void paint_mesh()
+        public void paint_mesh_surface()
         {
 
             if (is_geometry_set == false)
                 return;
 
             // Paint the mesh objects
-            mesh_data.paint_mesh();
+            mesh_data.paint_mesh_surface();
 
+        }
+
+
+        public void paint_mesh_linespoints()
+        {
+            if (is_geometry_set == false)
+                return;
+            // Paint the mesh objects
+            mesh_data.paint_mesh_linespoints();
         }
 
 

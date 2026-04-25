@@ -213,7 +213,7 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
                         "\r\n" +
                         "// Set the fragment color as the sum of the diffuse and specular components \r\n" +
                         "f_Color = vColor; // diffuseColor + specularColor; \r\n" +
-                      "}"; 
+                      "}";
         }
 
 
@@ -249,32 +249,66 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
         //}
 
 
-        public static string mesh_frag_shader()
+        public static string mesh_frag_shader2()
         {
             return "#version 330 core\r\n" +
                     "\r\n" +
                     "in vec3 vNormal;\r\n" +
                     "in vec4 vColor;\r\n" +
-                    "out vec4 f_Color;\r\n" +
                     "\r\n" +
-                    "uniform float uAmbientStrength;\r\n" +
+                    "out vec4 FragColor;\r\n" +
+                    "\r\n" +
+                    "// Separate colors for front/back faces\r\n" +
+                    "uniform vec4 uFrontColor;\r\n" +
+                    "uniform vec4 uBackColor;\r\n" +
+                    "\r\n" +
+                    "// Simple directional light (optional but useful)\r\n" +
+                    "uniform vec3 uLightDir;   // should be normalized\r\n" +
+                    "uniform float uLightIntensity; // e.g. 0.2–1.0\r\n" +
                     "\r\n" +
                     "void main()\r\n" +
                     "{\r\n" +
-                    "    vec3 normal = normalize(vNormal);\r\n" +
-                    "    vec3 lightDir = normalize(vec3(0.5, 1.0, 0.3)); // Fixed light direction\r\n" +
-                    "    \r\n" +
-                    "    float diff = max(dot(normal, lightDir), 0.0);\r\n" +
-                    "    float ambient = uAmbientStrength;\r\n" +
-                    "    float brightness = ambient + diff;\r\n" +
-                    "    \r\n" +
-                    "    f_Color = vec4(vColor.rgb * brightness, vColor.a);\r\n" +
+                    "// Normalize interpolated normal\r\n" +
+                    "vec3 N = normalize(vNormal);\r\n" +
+                    "\r\n" +
+                    "// Basic diffuse lighting\r\n" +
+                    "float NdotL = max(dot(N, normalize(uLightDir)), 0.0);\r\n" +
+                    "float lighting = uLightIntensity * NdotL + 0.2; // add ambient term\r\n" +
+                    "\r\n" +
+                    "// Choose color based on face orientation\r\n" +
+                    "vec4 baseColor = gl_FrontFacing ? uFrontColor : uBackColor;\r\n" +
+                    "\r\n" +
+                    "// Combine with vertex color (optional multiplier)\r\n" +
+                    "vec4 finalColor = baseColor * vColor;\r\n" +
+                    "\r\n" +
+                    "// Apply lighting only to RGB (not alpha)\r\n" +
+                    "finalColor.rgb *= lighting;\r\n" +
+                    "\r\n" +
+                    "FragColor = finalColor;\r\n" +
                     "}\r\n";
         }
 
 
+        public static string mesh_frag_shader()
+        {
+            return  "#version 330 core\r\n" +
+                    "\r\n" +
+                    "in vec3 vNormal;\r\n" +
+                    "in vec4 vColor;\r\n" +
+                    "out vec4 FragColor;\r\n" +
+                    "\r\n" +
+                    "uniform vec4 uFrontColor;\r\n" +
+                    "uniform vec4 uBackColor;\r\n" +
+                    "\r\n" +
+                    "void main()\r\n" +
+                    "{\r\n" +
+                    "vec4 baseColor = gl_FrontFacing ? uFrontColor : uBackColor;\r\n" +
+                    "FragColor = baseColor * vColor;\r\n" +
+                    "}\r\n";
+        }
 
-        public  static string txt_frag_shader()
+
+        public static string txt_frag_shader()
         {
             // Stores the Text fragment shader
             return "";

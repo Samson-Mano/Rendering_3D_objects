@@ -181,44 +181,38 @@ namespace Rendering_3D_objects
             // Tell OpenGL to use MyGLControl
             glControl_main_panel.MakeCurrent();
 
-            GL.Enable(EnableCap.DepthClamp);
-            // GL.Enable(EnableCap.DepthTest);
-            GL.Enable(EnableCap.Blend);
-            GL.BlendFunc(0, BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
 
-            //// Paint the background color
-            //g_control.set_opengl_shader("background");
-            //g_control.paint_opengl_control_background();
-
-            // OPen GL works as state machine (select buffer & select the shader)
+            // Open GL works as state machine (select buffer & select the shader)
             // Vertex Buffer (Buffer memory in GPU VRAM)
             // Shader (program which runs on GPU to paint in the screen)
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            // Paint the geometry
-            geom.paint_mesh();
+            GL.Enable(EnableCap.DepthTest);
+            GL.DepthMask(true);
 
 
-            //g_control.set_opengl_shader("surfacegeometry");
-            //geom.paint_surf_objects();
 
-            //// Display the model using OpenGL
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
-            //GL.LineWidth(2.73f);
-            //g_control.set_opengl_shader("linegeometry");
-            //// geom.set_openTK_objects();
-            //geom.paint_line_objects();
+            GL.Disable(EnableCap.CullFace);
 
-            //// Display the label
-            //g_control.set_opengl_shader(1);
-            //g_control.update_shader_uniform_var(1, Color.Green);
-            //geom_obj.paint_label();
+            // KEY FIX: enable depth test but disable depth write ONLY here
+            GL.DepthMask(false);
 
-            // OpenTK windows are what's known as "double-buffered". In essence, the window manages two buffers.
-            // One is rendered to while the other is currently displayed by the window.
-            // This avoids screen tearing, a visual artifact that can happen if the buffer is modified while being displayed.
-            // After drawing, call this function to swap the buffers. If you don't, it won't display what you've rendered.
+            // Draw ONLY triangles here (not lines/points)
+            geom.paint_mesh_surface();
+
+            GL.DepthMask(true);
+
+
+            GL.Disable(EnableCap.Blend);
+
+            // Draw lines and points here (after drawing the surface)
+            geom.paint_mesh_linespoints();
+
             glControl_main_panel.SwapBuffers();
+            //
         }
 
         private void glControl_main_panel_MouseWheel(object sender, System.Windows.Forms.MouseEventArgs e)

@@ -316,10 +316,8 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
             }
         }
 
-
-        public void paint_mesh()
+        public void paint_mesh_surface()
         {
-
             mesh_shader.Use();
 
             // Paint the mesh using OpenTK (triangles and quads)
@@ -338,6 +336,12 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
                 quad_ElementBufferObject.Bind();
                 GL.DrawElements(PrimitiveType.Triangles, quadIndexData.Count, DrawElementsType.UnsignedInt, 0);
             }
+
+        }
+
+        public void paint_mesh_linespoints()
+        {
+            mesh_shader.Use();
 
             // Paint the wireframe
             if (gvariables_static.is_paint_wiremesh == true)
@@ -462,9 +466,11 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
             mesh_shader.SetMatrix4("uNormalMatrix", normalMatrix);
 
             // Fragement shader uniforms
-           //  mesh_shader.SetVector3("uLightDir", new Vector3(0.5f, 1.0f, 0.8f)); // Diagonal light
-            mesh_shader.SetFloat("uAmbientStrength", 0.3f);
-           // mesh_shader.SetBool("uDoubleSided", true);
+            mesh_shader.SetVector4("uFrontColor", new Vector4(0.2f, 0.6f, 1.0f, 0.5f)); // outside
+            mesh_shader.SetVector4("uBackColor", new Vector4(1.0f, 0.3f, 0.3f, 0.3f)); // inside
+
+            // mesh_shader.SetVector3("uLightDir", new Vector3(0.3f, 0.5f, 1.0f).Normalized());
+            // mesh_shader.SetFloat("uLightIntensity", 0.8f);
 
         }
 
