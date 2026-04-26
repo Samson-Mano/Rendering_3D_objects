@@ -93,7 +93,9 @@
     <Compile Include="open_tk_control\opentk_main_control.cs" />
     <Compile Include="open_tk_control\open_tk_bgdraw\drawing_area_control.cs" />
     <Compile Include="open_tk_control\open_tk_bgdraw\draw_axis_store.cs" />
+    <Compile Include="open_tk_control\open_tk_buffer\FullscreenQuad.cs" />
     <Compile Include="open_tk_control\open_tk_buffer\IndexBuffer.cs" />
+    <Compile Include="open_tk_control\open_tk_buffer\OITFrameBuffer.cs" />
     <Compile Include="open_tk_control\open_tk_buffer\VertexArray.cs" />
     <Compile Include="open_tk_control\open_tk_buffer\VertexBuffer.cs" />
     <Compile Include="open_tk_control\open_tk_buffer\VertexBufferLayout.cs" />

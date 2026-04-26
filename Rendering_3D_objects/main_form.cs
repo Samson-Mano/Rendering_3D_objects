@@ -1,31 +1,35 @@
-﻿using System;
-using System.IO;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-
-// OpenTK Library
+﻿// OpenTK Library
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Input;
-
+using Rendering_3D_objects.drawing_object_store;
 // This app references
 using Rendering_3D_objects.global_variables;
-using Rendering_3D_objects.drawing_object_store;
-using Rendering_3D_objects.Text_to_mesh;
 using Rendering_3D_objects.open_tk_control;
+using Rendering_3D_objects.open_tk_control.open_tk_buffer;
+using Rendering_3D_objects.Text_to_mesh;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Security.Policy;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace Rendering_3D_objects
 {
     public partial class main_form : Form
     {
         public geometry_store geom { get; private set; }
+
+        OITFrameBuffer oitFbo;
+
 
         // Variables to control openTK GLControl
         // glControl wrapper class
@@ -46,6 +50,8 @@ namespace Rendering_3D_objects
 
             // Load the wrapper class to control the openTK Glcontrol
             g_control = new opentk_main_control();
+
+            oitFbo = new OITFrameBuffer(glControl_main_panel.Width, glControl_main_panel.Height);
 
             // Fill the glcontrol panel
             glControl_main_panel.BorderStyle = BorderStyle.Fixed3D;
@@ -167,6 +173,9 @@ namespace Rendering_3D_objects
             g_control.update_geom_shader(geom.geom_bounds_max, geom.geom_bounds_min);
 
 
+            oitFbo.Resize(glControl_main_panel.Width, glControl_main_panel.Height);
+
+
             toolStripStatusLabel_Zoom.Text = "Zoom: " + (gvariables_static.RoundOff((int)(1.0f * 100))).ToString() + "%";
 
             // Refresh the painting area
@@ -177,43 +186,62 @@ namespace Rendering_3D_objects
 
         private void glControl_main_panel_Paint(object sender, PaintEventArgs e)
         {
+
             // Paint the drawing area (glControl_main)
             // Tell OpenGL to use MyGLControl
             glControl_main_panel.MakeCurrent();
 
 
-            // Open GL works as state machine (select buffer & select the shader)
-            // Vertex Buffer (Buffer memory in GPU VRAM)
-            // Shader (program which runs on GPU to paint in the screen)
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            // ------------------------
+            // 1. OIT PASS
+            // ------------------------
+            oitFbo.Bind();
 
-            GL.Enable(EnableCap.DepthTest);
-            GL.DepthMask(true);
+            oitFbo.Clear(new Vector4(
+                gvariables_static.glcontrol_background_color.R / 255.0f,
+                gvariables_static.glcontrol_background_color.G / 255.0f,
+                gvariables_static.glcontrol_background_color.B / 255.0f,
+                gvariables_static.glcontrol_background_color.A / 255.0f));
 
+            // Console.WriteLine(GL.GetInteger(GetPName.FramebufferBinding));
+         
+            //GL.Enable(EnableCap.DepthTest);
+            //GL.DepthMask(false);
 
+            //GL.Enable(EnableCap.Blend);
 
-            GL.Enable(EnableCap.Blend);
-            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            //// REQUIRED
+            //GL.BlendFunc(BlendingFactor.One, BlendingFactor.One);
 
-            GL.Disable(EnableCap.CullFace);
-
-            // KEY FIX: enable depth test but disable depth write ONLY here
-            GL.DepthMask(false);
-
-            // Draw ONLY triangles here (not lines/points)
             geom.paint_mesh_surface();
 
-            GL.DepthMask(true);
+            //GL.DepthMask(true);
+            //GL.Disable(EnableCap.Blend);
 
+            //// ------------------------
+            //// 2. RESOLVE PASS
+            //// ------------------------
+            //GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 
-            GL.Disable(EnableCap.Blend);
+            //GL.Viewport(0, 0, glControl_main_panel.Width, glControl_main_panel.Height);
 
-            // Draw lines and points here (after drawing the surface)
+            //GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+            oitFbo.ResolveToScreen();
+
+            // ------------------------
+            // 3. OVERLAY PASS
+            // ------------------------
+            GL.Enable(EnableCap.DepthTest);
             geom.paint_mesh_linespoints();
 
+            // ------------------------
+            // 4. PRESENT
+            // ------------------------
             glControl_main_panel.SwapBuffers();
-            //
+ 
         }
+
 
         private void glControl_main_panel_MouseWheel(object sender, System.Windows.Forms.MouseEventArgs e)
         {

@@ -14,6 +14,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static OpenTK.Graphics.OpenGL.GL;
 
 
 
@@ -64,7 +65,7 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
 
         // Shader
         Shader mesh_shader;
-
+        Shader oitmesh_shader;
 
         // OpenTK variables
         VertexBuffer point_VertexBufferObject;
@@ -100,6 +101,8 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
             mesh_shader = new Shader(shader_store.mesh_vert_shader(),
                  shader_store.mesh_frag_shader());
 
+            oitmesh_shader = new Shader(shader_store.mesh_vert_shader_oit(),
+                 shader_store.mesh_frag_shader_oit());  
 
         }
 
@@ -115,8 +118,11 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
             this.equads = equads;
 
             // Create the mesh shader
-            mesh_shader = new Shader(shader_store.mesh_vert_shader(),
+             mesh_shader = new Shader(shader_store.mesh_vert_shader(),
                  shader_store.mesh_frag_shader());
+
+            oitmesh_shader = new Shader(shader_store.mesh_vert_shader_oit(),
+                shader_store.mesh_frag_shader_oit());
 
             // Create the wireframe from the mesh data
             create_wireframe();
@@ -318,15 +324,22 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
 
         public void paint_mesh_surface()
         {
-            mesh_shader.Use();
+            // mesh_shader.Use();
+
+            oitmesh_shader.Use();
+
+            //point_VertexBufferObject.Bind();
+            point_VertexArrayObject.Bind();
+
+            Console.WriteLine(GL.GetInteger(GetPName.FramebufferBinding));
+            Console.WriteLine("VAO = " + GL.GetInteger(GetPName.VertexArrayBinding));
 
             // Paint the mesh using OpenTK (triangles and quads)
             if (gvariables_static.is_paint_meshsurface == true)
             {
-                GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+                // GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
 
-                mesh_shader.SetVector4("vertexColor", new Vector4(0.6f, 0.6f, 0.8f, 0.6f)); // Light blue color (Transparent)
-
+                // mesh_shader.SetVector4("vertexColor", new Vector4(0.6f, 0.6f, 0.8f, 0.6f)); // Light blue color (Transparent)
 
                 // Paint the triangle mesh
                 triangle_ElementBufferObject.Bind();
@@ -341,14 +354,16 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
 
         public void paint_mesh_linespoints()
         {
-            mesh_shader.Use();
+             mesh_shader.Use();
+
+            point_VertexArrayObject.Bind();
 
             // Paint the wireframe
             if (gvariables_static.is_paint_wiremesh == true)
             {
                 GL.LineWidth(1.0f);
 
-                mesh_shader.SetVector4("vertexColor", new Vector4(0.0f, 0.0f, 0.0f, 1.0f)); // black
+                 mesh_shader.SetVector4("vertexColor", new Vector4(0.0f, 0.0f, 0.0f, 1.0f)); // black
 
                 // Paint the wireframe lines
                 wireframe_ElementBufferObject.Bind();
@@ -361,7 +376,7 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
             {
                 GL.LineWidth(2.5f);
 
-                mesh_shader.SetVector4("vertexColor", new Vector4(1f, 0f, 0f, 1f)); // red
+                 mesh_shader.SetVector4("vertexColor", new Vector4(1f, 0f, 0f, 1f)); // red
 
                 line_ElementBufferObject.Bind();
                 GL.DrawElements(PrimitiveType.Lines, lineIndexData.Count, DrawElementsType.UnsignedInt, 0);
@@ -373,7 +388,7 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
             {
                 GL.PointSize(4.0f);
 
-                mesh_shader.SetVector4("vertexColor", new Vector4(0f, 1f, 0f, 1f)); // green
+                 mesh_shader.SetVector4("vertexColor", new Vector4(0f, 1f, 0f, 1f)); // green
 
                 point_ElementBufferObject.Bind();
                 GL.DrawElements(PrimitiveType.Points, pointIndexData.Count, DrawElementsType.UnsignedInt, 0);
@@ -441,11 +456,6 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
         public void update_ShaderUniforms()
         {
             // Update the shader uniforms for the mesh shader
-            //mesh_shader.SetMatrix4("modelMatrix", gvariables_static.modelMatrix);
-            //mesh_shader.SetMatrix4("rotationMatrix", gvariables_static.rotationMatrix);
-            //mesh_shader.SetMatrix4("panTranslation", gvariables_static.panTranslationMatrix);
-            //mesh_shader.SetFloat("zoomscale", gvariables_static.zoomScale);
-
             Matrix4 scalingMatrix = Matrix4.CreateScale((float)gvariables_static.zoomScale, 
                 (float)gvariables_static.zoomScale, 
                 (float)gvariables_static.zoomScale);
@@ -462,15 +472,15 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
                 gvariables_static.modelMatrix));
 
             // Set uniforms
-            mesh_shader.SetMatrix4("uMVP", mvp);
-            mesh_shader.SetMatrix4("uNormalMatrix", normalMatrix);
+             mesh_shader.SetMatrix4("uMVP", mvp);
+             mesh_shader.SetMatrix4("uNormalMatrix", normalMatrix);
 
             // Fragement shader uniforms
-            mesh_shader.SetVector4("uFrontColor", new Vector4(0.2f, 0.6f, 1.0f, 0.5f)); // outside
-            mesh_shader.SetVector4("uBackColor", new Vector4(1.0f, 0.3f, 0.3f, 0.3f)); // inside
+             mesh_shader.SetVector4("uFrontColor", new Vector4(0.2f, 0.6f, 1.0f, 0.5f)); // outside
+             mesh_shader.SetVector4("uBackColor", new Vector4(1.0f, 0.3f, 0.3f, 0.3f)); // inside
 
-            // mesh_shader.SetVector3("uLightDir", new Vector3(0.3f, 0.5f, 1.0f).Normalized());
-            // mesh_shader.SetFloat("uLightIntensity", 0.8f);
+            oitmesh_shader.SetMatrix4("uMVP", mvp);
+            oitmesh_shader.SetVector4("uColor", new Vector4(0f, 1f, 1f, 1f));
 
         }
 
