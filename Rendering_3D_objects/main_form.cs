@@ -191,55 +191,98 @@ namespace Rendering_3D_objects
             // Tell OpenGL to use MyGLControl
             glControl_main_panel.MakeCurrent();
 
+            const bool IsOIT = false;
 
-            // ------------------------
-            // 1. OIT PASS
-            // ------------------------
-            oitFbo.Bind();
+            if(IsOIT == true)
+            {
 
-            oitFbo.Clear(new Vector4(
-                gvariables_static.glcontrol_background_color.R / 255.0f,
-                gvariables_static.glcontrol_background_color.G / 255.0f,
-                gvariables_static.glcontrol_background_color.B / 255.0f,
-                gvariables_static.glcontrol_background_color.A / 255.0f));
+                // ------------------------
+                // 1. OIT PASS
+                // ------------------------
+                oitFbo.Bind();
 
-            // Console.WriteLine(GL.GetInteger(GetPName.FramebufferBinding));
-         
-            //GL.Enable(EnableCap.DepthTest);
-            //GL.DepthMask(false);
+                oitFbo.Clear(new Vector4(
+                    gvariables_static.glcontrol_background_color.R / 255.0f,
+                    gvariables_static.glcontrol_background_color.G / 255.0f,
+                    gvariables_static.glcontrol_background_color.B / 255.0f,
+                    gvariables_static.glcontrol_background_color.A / 255.0f));
 
-            //GL.Enable(EnableCap.Blend);
 
-            //// REQUIRED
-            //GL.BlendFunc(BlendingFactor.One, BlendingFactor.One);
+                geom.paint_mesh_surface_oit();
 
-            geom.paint_mesh_surface();
+                GL.DepthMask(true);
+                GL.Disable(EnableCap.Blend);
 
-            //GL.DepthMask(true);
-            //GL.Disable(EnableCap.Blend);
+                // ------------------------
+                // 2. RESOLVE PASS
+                // ------------------------
+                GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 
-            //// ------------------------
-            //// 2. RESOLVE PASS
-            //// ------------------------
-            //GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+                GL.Viewport(0, 0, glControl_main_panel.Width, glControl_main_panel.Height);
 
-            //GL.Viewport(0, 0, glControl_main_panel.Width, glControl_main_panel.Height);
 
-            //GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            oitFbo.ResolveToScreen();
+                oitFbo.ResolveToScreen();
 
-            // ------------------------
-            // 3. OVERLAY PASS
-            // ------------------------
-            GL.Enable(EnableCap.DepthTest);
-            geom.paint_mesh_linespoints();
+                oitFbo.UnBind();
 
-            // ------------------------
-            // 4. PRESENT
-            // ------------------------
-            glControl_main_panel.SwapBuffers();
- 
+
+                // ------------------------
+                // 3. OVERLAY PASS
+                // ------------------------
+
+
+                int frame_size = 0;
+                int frame_x = 0;
+                int frame_y = 0;
+
+                // Update the graphics drawing area
+                // Only applicable to Background
+                if (glControl_main_panel.Width > glControl_main_panel.Height)
+                {
+                    frame_x = 0;
+                    frame_y = (int)(-(glControl_main_panel.Width - glControl_main_panel.Height) * 0.5);
+                    frame_size = glControl_main_panel.Width;
+                }
+                else
+                {
+                    frame_x = (int)(-(glControl_main_panel.Height - glControl_main_panel.Width) * 0.5);
+                    frame_y = 0;
+                    frame_size = glControl_main_panel.Height;
+                }
+
+
+                GL.Viewport(frame_x, frame_y, frame_size, frame_size);
+
+                GL.Enable(EnableCap.DepthTest);
+
+                geom.paint_mesh_linespoints();
+
+
+                // ------------------------
+                // 4. PRESENT
+                // ------------------------
+                glControl_main_panel.SwapBuffers();
+            }
+            else
+            {
+
+                GL.Enable(EnableCap.Blend);
+                GL.BlendFunc(0, BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
+
+
+                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+
+                geom.paint_mesh_surface();
+
+                geom.paint_mesh_linespoints();
+
+
+                glControl_main_panel.SwapBuffers();
+            }
+            //
         }
 
 

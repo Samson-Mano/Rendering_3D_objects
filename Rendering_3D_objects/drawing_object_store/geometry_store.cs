@@ -75,6 +75,18 @@ namespace Rendering_3D_objects.drawing_object_store
         }
 
 
+        public void paint_mesh_surface_oit()
+        {
+
+            if (is_geometry_set == false)
+                return;
+
+            // Paint the mesh objects
+            mesh_data.paint_mesh_surface_oit();
+
+        }
+
+
         public void paint_mesh_surface()
         {
 

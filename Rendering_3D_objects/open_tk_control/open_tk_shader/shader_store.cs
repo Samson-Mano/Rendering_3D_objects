@@ -34,77 +34,27 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
 
         public static string mesh_vert_shader()
         {
-            return "#version 330 core\r\n" +
-                    "\r\n" +
-                    "// Pre-computed MVP matrix on CPU for better performance\r\n" +
-                    "uniform mat4 uMVP;           // Model-View-Projection matrix\r\n" +
-                    "uniform mat4 uNormalMatrix;  // For normal transformation\r\n" +
-                    "uniform vec4 vertexColor;\r\n" +
-                    "\r\n" +
-                    "layout(location = 0) in vec3 aPosition;\r\n" +
-                    "layout(location = 1) in vec3 aNormal;\r\n" +
-                    "\r\n" +
-                    "out vec3 vNormal;\r\n" +
-                    "out vec4 vColor;\r\n" +
-                    "\r\n" +
-                    "void main()\r\n" +
-                    "{\r\n" +
-                    "    gl_Position = uMVP * vec4(aPosition, 1.0);\r\n" +
-                    "    vNormal = normalize(mat3(uNormalMatrix) * aNormal);\r\n" +
-                    "    vColor = vertexColor;\r\n" +
-                    "}\r\n";
+            return @"#version 330 core
+                    
+                    // Pre-computed MVP matrix on CPU for better performance
+                    uniform mat4 uMVP;           // Model-View-Projection matrix
+                    uniform mat4 uNormalMatrix;  // For normal transformation
+                    uniform vec4 vertexColor;
+                    
+                    layout(location = 0) in vec3 aPosition;
+                    layout(location = 1) in vec3 aNormal;
+                    
+                    out vec3 vNormal;
+                    out vec4 vColor;
+                    
+                    void main()
+                    {
+                        gl_Position = uMVP * vec4(aPosition, 1.0);
+                        vNormal = normalize(mat3(uNormalMatrix) * aNormal);
+                        vColor = vertexColor;
+                    }";
         }
 
-
-
-
-        public static string mesh_vert_shader_superseeded()
-        {
-            // Stores the Geometry surface vertex shader
-            return "#version 330 core\r\n" +
-                    "\r\n" +
-                    "uniform mat4 modelMatrix;\r\n" +
-                    "uniform mat4 rotationMatrix;\r\n" +
-                    "uniform mat4 panTranslation;\r\n" +
-                    "uniform float zoomscale;\r\n" +
-                    "uniform vec4 vertexColor;\r\n" +
-                    "\r\n" +
-                    "layout(location = 0) in vec3 position;\r\n" +
-                    "layout(location = 1) in vec3 surfnormal;\r\n" +
-                    "\r\n" +
-                    "\r\n" +
-                    "out vec3 s_normal;\r\n" +
-                    "out vec4 v_Color;\r\n" +
-                    "\r\n" +
-                    "mat4 scaleMatrix(in float scale) \r\n" +
-                    "{ \r\n" +
-                        "return mat4( \r\n" +
-                          "scale, 0.0, 0.0, 0.0, \r\n" +
-                          "0.0, scale, 0.0, 0.0, \r\n" +
-                          "0.0, 0.0, scale, 0.0, \r\n" +
-                          "0.0, 0.0, 0.0, 1.0 \r\n" +
-                        "); \r\n" +
-                    "} \r\n" +
-                    "\r\n" +
-                    "void main()\r\n" +
-                    "{\r\n" +
-                        "\r\n" +
-                        "// apply zoom scaling and Rotation to model matrix \r\n" +
-                        "mat4 scalingMatrix = scaleMatrix(zoomscale); \r\n" +
-                        "mat4 scaledModelMatrix = scalingMatrix * modelMatrix; \r\n" +
-                        "mat4 rotatedModelMatrix = rotationMatrix * scaledModelMatrix; \r\n" +
-                        "mat4 translatedModelMatrix =  rotatedModelMatrix * panTranslation; \r\n" +
-                        "\r\n" +
-                        "// apply Translation to the final position \r\n" +
-                        "vec4 finalPosition = rotatedModelMatrix * vec4(position,1.0f) * panTranslation;\r\n" +
-                        "\r\n" +
-                        "vec4 finalsurfnormal = rotationMatrix * vec4(surfnormal,1.0f);\r\n" +
-                        "\r\n" +
-                        "s_normal = vec3(finalsurfnormal.x,finalsurfnormal.y,finalsurfnormal.z);\r\n" +
-                        "v_Color = vertexColor;\r\n" +
-                        "gl_Position = finalPosition;\r\n" +
-                    "} \r\n";
-        }
 
         public static string txt_vert_shader()
         {
@@ -167,132 +117,132 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
         public static string mesh_frag_shader_superseeded()
         {
             // Stores the Geometry surface fragment shader
-            return "#version 330 core\r\n" +
-                    "\r\n" +
-                    "in vec3 vNormal;\r\n" +
-                    "in vec4 vColor;\r\n" +
-                    "out vec4 f_Color; // fragment's final color (out to the fragment shader)\r\n" +
-                    "\r\n" +
-                    "void main()\r\n" +
-                    "{\r\n" +
-                        "vec3 viewDirection = {0.0,0.0,50.0}; \r\n" +
-                        "// Normalize the interpolated normal \r\n" +
-                        "vec3 normal = normalize(vNormal); \r\n" +
-                        "\r\n" +
-                        "// Use the constant view direction \r\n" +
-                        "vec3 viewDir = {0.0,0.0,1.0}; // normalize(viewDirection); \r\n" +
-                        "\r\n" +
-                        "// Use the light direction slightly off the view direction \r\n" +
-                        "vec3 lightDir = vec3(0, 0, 1); //normalize(viewDir + vec3(0, 0, 1)); \r\n" +
-                        "\r\n" +
-                        "// Set the constant light color to white \r\n" +
-                        "vec4 lightColor = vec4(1.0); \r\n" +
-                        "\r\n" +
-                        "// Calculate the reflection vector \r\n" +
-                        "vec3 reflection = reflect(-lightDir, normal); \r\n" +
-                        "\r\n" +
-                        "// Calculate the diffuse and specular components of the Phong model \r\n" +
-                        "float diffuse = max(dot(lightDir, normal), 0.0); \r\n" +
-                        "float specular = pow(max(dot(reflection, viewDir), 0.0), 32.0); \r\n" +
-                        "\r\n" +
-                        "// Combine the diffuse and specular components with the vertex color and light color \r\n" +
-                        "vec4 diffuseColor = vColor * diffuse; \r\n" +
-                        "vec4 specularColor = lightColor * specular; \r\n" +
-                        "\r\n" +
-                        "// Set the fragment color as the sum of the diffuse and specular components \r\n" +
-                        "f_Color = vColor; // diffuseColor + specularColor; \r\n" +
-                      "}";
+            return @"#version 330 core
+                    
+                    in vec3 vNormal;
+                    in vec4 vColor;
+                    out vec4 f_Color; // fragment's final color (out to the fragment shader)
+                    
+                    void main()
+                    {
+                        vec3 viewDirection = {0.0,0.0,50.0}; 
+                        // Normalize the interpolated normal 
+                        vec3 normal = normalize(vNormal);
+                        
+                        // Use the constant view direction 
+                        vec3 viewDir = {0.0,0.0,1.0}; // normalize(viewDirection); 
+                        
+                        // Use the light direction slightly off the view direction 
+                        vec3 lightDir = vec3(0, 0, 1); //normalize(viewDir + vec3(0, 0, 1)); 
+                        
+                        // Set the constant light color to white 
+                        vec4 lightColor = vec4(1.0); 
+                        
+                        // Calculate the reflection vector 
+                        vec3 reflection = reflect(-lightDir, normal); 
+                        
+                        // Calculate the diffuse and specular components of the Phong model 
+                        float diffuse = max(dot(lightDir, normal), 0.0);
+                        float specular = pow(max(dot(reflection, viewDir), 0.0), 32.0); 
+                        
+                        // Combine the diffuse and specular components with the vertex color and light color 
+                        vec4 diffuseColor = vColor * diffuse; 
+                        vec4 specularColor = lightColor * specular; 
+                        
+                        // Set the fragment color as the sum of the diffuse and specular components 
+                        f_Color = vColor; // diffuseColor + specularColor; 
+                      }";
         }
 
 
         //public static string mesh_frag_shader()
         //{
-        //    return "#version 330 core\r\n" +
-        //            "\r\n" +
-        //            "in vec3 vNormal;\r\n" +
-        //            "in vec4 vColor;\r\n" +
-        //            "out vec4 f_Color;\r\n" +
-        //            "\r\n" +
-        //            "uniform vec3 uLightDir;\r\n" +
-        //            "uniform float uAmbientStrength;\r\n" +
-        //            "uniform bool uDoubleSided;\r\n" +
-        //            "\r\n" +
-        //            "void main()\r\n" +
-        //            "{\r\n" +
-        //            "    vec3 normal = normalize(vNormal);\r\n" +
-        //            "    vec3 lightDir = normalize(uLightDir);\r\n" +
-        //            "    \r\n" +
-        //            "    // Calculate dot product, using absolute value for double-sided\r\n" +
-        //            "    float diff = dot(normal, lightDir);\r\n" +
-        //            "    if (uDoubleSided) {\r\n" +
-        //            "        diff = abs(diff);  // Light both sides equally\r\n" +
-        //            "    }\r\n" +
-        //            "    diff = max(diff, 0.0);\r\n" +
-        //            "    \r\n" +
-        //            "    float ambient = uAmbientStrength;\r\n" +
-        //            "    float brightness = ambient + diff;\r\n" +
-        //            "    \r\n" +
-        //            "    f_Color = vec4(vColor.rgb * brightness, vColor.a);\r\n" +
-        //            "}\r\n";
+        //    return @"#version 330 core
+                    
+        //            in vec3 vNormal;
+        //            in vec4 vColor;
+        //            out vec4 f_Color;
+                    
+        //            uniform vec3 uLightDir;
+        //            uniform float uAmbientStrength;
+        //            uniform bool uDoubleSided;
+                    
+        //            void main()
+        //            {
+        //                vec3 normal = normalize(vNormal);
+        //                vec3 lightDir = normalize(uLightDir);
+                    
+        //                // Calculate dot product, using absolute value for double-sided
+        //                float diff = dot(normal, lightDir);
+        //                if (uDoubleSided) {
+        //                    diff = abs(diff);  // Light both sides equally
+        //                }
+        //                diff = max(diff, 0.0);
+                    
+        //                float ambient = uAmbientStrength;
+        //                float brightness = ambient + diff;
+                    
+        //                f_Color = vec4(vColor.rgb * brightness, vColor.a);
+        //            }";
         //}
 
 
         public static string mesh_frag_shader2()
         {
-            return "#version 330 core\r\n" +
-                    "\r\n" +
-                    "in vec3 vNormal;\r\n" +
-                    "in vec4 vColor;\r\n" +
-                    "\r\n" +
-                    "out vec4 FragColor;\r\n" +
-                    "\r\n" +
-                    "// Separate colors for front/back faces\r\n" +
-                    "uniform vec4 uFrontColor;\r\n" +
-                    "uniform vec4 uBackColor;\r\n" +
-                    "\r\n" +
-                    "// Simple directional light (optional but useful)\r\n" +
-                    "uniform vec3 uLightDir;   // should be normalized\r\n" +
-                    "uniform float uLightIntensity; // e.g. 0.2–1.0\r\n" +
-                    "\r\n" +
-                    "void main()\r\n" +
-                    "{\r\n" +
-                    "// Normalize interpolated normal\r\n" +
-                    "vec3 N = normalize(vNormal);\r\n" +
-                    "\r\n" +
-                    "// Basic diffuse lighting\r\n" +
-                    "float NdotL = max(dot(N, normalize(uLightDir)), 0.0);\r\n" +
-                    "float lighting = uLightIntensity * NdotL + 0.2; // add ambient term\r\n" +
-                    "\r\n" +
-                    "// Choose color based on face orientation\r\n" +
-                    "vec4 baseColor = gl_FrontFacing ? uFrontColor : uBackColor;\r\n" +
-                    "\r\n" +
-                    "// Combine with vertex color (optional multiplier)\r\n" +
-                    "vec4 finalColor = baseColor * vColor;\r\n" +
-                    "\r\n" +
-                    "// Apply lighting only to RGB (not alpha)\r\n" +
-                    "finalColor.rgb *= lighting;\r\n" +
-                    "\r\n" +
-                    "FragColor = finalColor;\r\n" +
-                    "}\r\n";
+            return @"#version 330 core
+                    
+                    in vec3 vNormal;
+                    in vec4 vColor;
+                    
+                    out vec4 FragColor;
+                    
+                    // Separate colors for front/back faces
+                    uniform vec4 uFrontColor;
+                    uniform vec4 uBackColor;
+                    
+                    // Simple directional light (optional but useful)
+                    uniform vec3 uLightDir;   // should be normalized
+                    uniform float uLightIntensity; // e.g. 0.2–1.0
+                    
+                    void main()
+                    {
+                    // Normalize interpolated normal
+                    vec3 N = normalize(vNormal);
+                    
+                    // Basic diffuse lighting
+                    float NdotL = max(dot(N, normalize(uLightDir)), 0.0);
+                    float lighting = uLightIntensity * NdotL + 0.2; // add ambient term
+                    
+                    // Choose color based on face orientation
+                    vec4 baseColor = gl_FrontFacing ? uFrontColor : uBackColor;
+                    
+                    // Combine with vertex color (optional multiplier)
+                    vec4 finalColor = baseColor * vColor;
+                    
+                    // Apply lighting only to RGB (not alpha)
+                    finalColor.rgb *= lighting;
+                    
+                    FragColor = finalColor;
+                    }";
         }
 
 
         public static string mesh_frag_shader()
         {
-            return "#version 330 core\r\n" +
-                    "\r\n" +
-                    "in vec3 vNormal;\r\n" +
-                    "in vec4 vColor;\r\n" +
-                    "out vec4 FragColor;\r\n" +
-                    "\r\n" +
-                    "uniform vec4 uFrontColor;\r\n" +
-                    "uniform vec4 uBackColor;\r\n" +
-                    "\r\n" +
-                    "void main()\r\n" +
-                    "{\r\n" +
-                    "vec4 baseColor = gl_FrontFacing ? uFrontColor : uBackColor;\r\n" +
-                    "FragColor = baseColor * vColor;\r\n" +
-                    "}\r\n";
+            return @"#version 330 core
+                   
+                    in vec3 vNormal;
+                    in vec4 vColor;
+                    out vec4 FragColor;
+                    
+                    uniform vec4 uFrontColor;
+                    uniform vec4 uBackColor;
+                    
+                    void main()
+                    {
+                        vec4 baseColor = gl_FrontFacing ? uFrontColor : uBackColor;
+                        FragColor = baseColor * vColor;
+                    };";
         }
 
 
@@ -357,7 +307,7 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
                         float alpha = color.a;
 
                         // Simple stable weight (good default)   max(0.01, min(1.0, alpha)); //
-                        float weight =   max(alpha * 10.0, 0.01);
+                        float weight =  max(0.01, min(1.0, alpha)); //  max(alpha * 10.0, 0.01);
 
                         // Accumulation
                         accumColor.rgb = color.rgb * alpha * weight;

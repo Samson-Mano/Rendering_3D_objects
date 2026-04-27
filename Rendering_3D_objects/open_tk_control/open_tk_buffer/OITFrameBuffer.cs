@@ -1,15 +1,17 @@
 ﻿
-using Rendering_3D_objects.open_tk_control.open_tk_shader;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 // OpenTK library
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Input;
+using Rendering_3D_objects.global_variables;
+using Rendering_3D_objects.open_tk_control.open_tk_shader;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 
 namespace Rendering_3D_objects.open_tk_control.open_tk_buffer
@@ -75,7 +77,6 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_buffer
 
         private void CreateFramebuffer()
         {
-
             // Create fullscreen quad for composition
             fullscreenQuad = new FullscreenQuad();
 
@@ -147,64 +148,82 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_buffer
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
         }
 
+
         public void Bind()
         {
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, oitFrameBufferId);
-            GL.Viewport(0, 0, width, height);
+
+            int frame_size = 0;
+            int frame_x = 0;
+            int frame_y = 0;
+
+            // Update the graphics drawing area
+            // Only applicable to Background
+            if (width > height)
+            {
+                frame_x = 0;
+                frame_y = (int)(-(width - height) * 0.5);
+                frame_size = width;
+            }
+            else
+            {
+                frame_x = (int)(-(height - width) * 0.5);
+                frame_y = 0;
+                frame_size = height;
+            }
 
 
-            GL.Enable(EnableCap.DepthTest);
-            GL.DepthMask(false);
+            GL.Viewport(frame_x, frame_y, frame_size, frame_size);
 
+
+            //GL.Enable(EnableCap.DepthTest);
+            //GL.DepthMask(false);
 
 
             GL.Disable(EnableCap.Blend);
             GL.Disable(EnableCap.DepthTest);
-            // GL.BlendFunc(BlendingFactor.One, BlendingFactor.One);
 
-
-            //// Draw buffers
-            //DrawBuffersEnum[] drawBuffers = new DrawBuffersEnum[]
-            //{
-            //DrawBuffersEnum.ColorAttachment0,
-            //DrawBuffersEnum.ColorAttachment1
-            //};
-
-            //GL.DrawBuffers(drawBuffers.Length, drawBuffers);
-
+            GL.BlendFunc(BlendingFactor.One, BlendingFactor.One);
+            
+//            GL.Enable(EnableCap.Blend);
+ //           GL.BlendFunc(BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
 
         }
+
 
         public void UnBind()
         {
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
         }
 
+
         public void Clear(Vector4 clearColor)
         {
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, oitFrameBufferId);
 
             // Clear accumulation to (0,0,0,0)
             GL.ClearBuffer(ClearBuffer.Color, 0, new float[] { 0, 0, 0, 0 }); // accum
+            
             // Clear revealage to 1.0 (fully opaque/empty)
             GL.ClearBuffer(ClearBuffer.Color, 1, new float[] { 1.0f });      // reveal
+
             // Clear depth
             GL.Clear(ClearBufferMask.DepthBufferBit);
         }
 
         public void ResolveToScreen()
         {
-            // Unbind OIT framebuffer
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-
-            // Make sure we're rendering to the default framebuffer
-            GL.Viewport(0, 0, width, height);
-
-            GL.Disable(EnableCap.Blend);
-            GL.Disable(EnableCap.DepthTest);
 
             // Use resolution shader
             resolutionShader.Use();
+
+
+            resolutionShader.SetVector4("uClearColor", new Vector4(
+                gvariables_static.glcontrol_background_color.R / 255f,
+                gvariables_static.glcontrol_background_color.G / 255f,
+                gvariables_static.glcontrol_background_color.B / 255f,
+                gvariables_static.glcontrol_background_color.A / 255f
+            ));
+
 
             // Bind textures
             GL.ActiveTexture(TextureUnit.Texture0);

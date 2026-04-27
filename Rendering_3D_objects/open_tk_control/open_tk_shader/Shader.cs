@@ -128,6 +128,11 @@ namespace Rendering_3D_objects.open_tk_control.open_tk_shader
             GL.UseProgram(Handle);
         }
 
+        public void UnBind()
+        {
+            GL.UseProgram(0);
+        }
+
         // The shader sources provided with this project use hardcoded layout(location)-s. If you want to do it dynamically,
         // you can omit the layout(location=X) lines in the vertex shader, and use this in VertexAttribPointer instead of the hardcoded values.
         public int GetAttribLocation(string attribName)

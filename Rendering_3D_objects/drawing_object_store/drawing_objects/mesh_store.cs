@@ -322,17 +322,16 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
             }
         }
 
-        public void paint_mesh_surface()
+        public void paint_mesh_surface_oit()
         {
             // mesh_shader.Use();
 
             oitmesh_shader.Use();
 
-            //point_VertexBufferObject.Bind();
             point_VertexArrayObject.Bind();
 
-            Console.WriteLine(GL.GetInteger(GetPName.FramebufferBinding));
-            Console.WriteLine("VAO = " + GL.GetInteger(GetPName.VertexArrayBinding));
+            // Console.WriteLine(GL.GetInteger(GetPName.FramebufferBinding));
+            // Console.WriteLine("VAO = " + GL.GetInteger(GetPName.VertexArrayBinding));
 
             // Paint the mesh using OpenTK (triangles and quads)
             if (gvariables_static.is_paint_meshsurface == true)
@@ -350,11 +349,40 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
                 GL.DrawElements(PrimitiveType.Triangles, quadIndexData.Count, DrawElementsType.UnsignedInt, 0);
             }
 
+            oitmesh_shader.UnBind();
         }
+
+
+        public void paint_mesh_surface()
+        {
+            mesh_shader.Use();
+
+            point_VertexArrayObject.Bind();
+
+            // Console.WriteLine(GL.GetInteger(GetPName.FramebufferBinding));
+            // Console.WriteLine("VAO = " + GL.GetInteger(GetPName.VertexArrayBinding));
+
+            // Paint the mesh using OpenTK (triangles and quads)
+            if (gvariables_static.is_paint_meshsurface == true)
+            {
+                // GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+
+                mesh_shader.SetVector4("vertexColor", new Vector4(0.6f, 0.6f, 0.8f, 0.6f)); // Light blue color (Transparent)
+
+                // Paint the triangle mesh
+                triangle_ElementBufferObject.Bind();
+                GL.DrawElements(PrimitiveType.Triangles, triangleIndexData.Count, DrawElementsType.UnsignedInt, 0);
+
+                // Paint the quad mesh (as triangles)
+                quad_ElementBufferObject.Bind();
+                GL.DrawElements(PrimitiveType.Triangles, quadIndexData.Count, DrawElementsType.UnsignedInt, 0);
+            }
+        }
+
 
         public void paint_mesh_linespoints()
         {
-             mesh_shader.Use();
+            mesh_shader.Use();
 
             point_VertexArrayObject.Bind();
 
@@ -393,6 +421,9 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
                 point_ElementBufferObject.Bind();
                 GL.DrawElements(PrimitiveType.Points, pointIndexData.Count, DrawElementsType.UnsignedInt, 0);
             }
+
+            mesh_shader.UnBind();
+
             //
         }
 
@@ -471,16 +502,41 @@ namespace Rendering_3D_objects.drawing_object_store.drawing_objects
             Matrix4 normalMatrix = Matrix4.Transpose(Matrix4.Invert(gvariables_static.rotationMatrix * 
                 gvariables_static.modelMatrix));
 
+
+
+
             // Set uniforms
              mesh_shader.SetMatrix4("uMVP", mvp);
              mesh_shader.SetMatrix4("uNormalMatrix", normalMatrix);
 
+
+            for (int i = 0; i < triangleIndexData.Count; i += 3)
+            {
+                int i0 = (int)triangleIndexData[i];
+                int i1 = (int)triangleIndexData[i + 1];
+                int i2 = (int)triangleIndexData[i + 2];
+
+                Vector3 v0 = get_vertex(i0);
+                Vector3 v1 = get_vertex(i1);
+                Vector3 v2 = get_vertex(i2);
+
+                Vector3 c = (v0 + v1 + v2) / 3f;
+
+                Vector4 viewPos = Vector4.Transform(new Vector4(c, 1.0f), viewMatrix);
+
+                float depth = viewPos.Z;
+
+                // store depth for sorting
+            }
+
+
+
             // Fragement shader uniforms
-             mesh_shader.SetVector4("uFrontColor", new Vector4(0.2f, 0.6f, 1.0f, 0.5f)); // outside
-             mesh_shader.SetVector4("uBackColor", new Vector4(1.0f, 0.3f, 0.3f, 0.3f)); // inside
+            mesh_shader.SetVector4("uFrontColor", new Vector4(0.2f, 0.6f, 1.0f, 0.5f)); // outside
+            mesh_shader.SetVector4("uBackColor", new Vector4(1.0f, 0.3f, 0.3f, 0.3f)); // inside
 
             oitmesh_shader.SetMatrix4("uMVP", mvp);
-            oitmesh_shader.SetVector4("uColor", new Vector4(0f, 1f, 1f, 1f));
+            oitmesh_shader.SetVector4("uColor", new Vector4(0f, 0f, 1f, 0.1f));
 
         }
 
